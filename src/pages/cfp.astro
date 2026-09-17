@@ -1,0 +1,107 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import RowTable from '../components/RowTable.astro';
+import { sessions } from '../data/sessions';
+import { hhmm } from '../utils/time';
+
+const slots = sessions.filter((s) => s.type === 'submission');
+---
+
+<BaseLayout title="學生投稿" description="QRACON 2026 學生投稿：議程草案保留的發表時段與徵稿資訊。">
+  <PageHead
+    title="學生投稿"
+    status="徵稿資訊待公布"
+  />
+
+  <div class="wrap cfp-page">
+    <section class="cfp-page__slots" aria-labelledby="slots-title">
+      <h2 id="slots-title">草案中的發表時段</h2>
+      <ol class="slot-list" role="list">
+        {
+          slots.map((s) => (
+            <li>
+              <a href={`/agenda/${s.id}/`}>
+                <time class="slot-list__time" datetime={s.start}>
+                  {hhmm(s.start)}
+                </time>
+                <span class="slot-list__title">{s.title}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="cfp-page__timeline" aria-labelledby="timeline-title">
+      <h2 class="visually-hidden" id="timeline-title">徵稿時程</h2>
+      <RowTable
+        caption="徵稿時程"
+        rows={[
+          { label: '開放投稿', value: null },
+          { label: '投稿截止', value: null },
+          { label: '公布結果', value: null },
+          { label: '投稿格式', value: null },
+        ]}
+      />
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .cfp-page {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: var(--space-8);
+  }
+
+  .cfp-page h2 {
+    margin-bottom: var(--space-5);
+    font-size: var(--text-2xl);
+  }
+
+  .cfp-page__slots {
+    grid-column: 1 / span 5;
+  }
+
+  .cfp-page__timeline {
+    grid-column: 7 / span 6;
+  }
+
+  .slot-list {
+    margin: 0;
+    border-top: var(--rule-heavy) solid var(--color-ink);
+  }
+
+  .slot-list a {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-5);
+    padding-block: var(--space-4);
+    border-bottom: var(--rule-hair) solid var(--color-ink);
+    text-decoration: none;
+  }
+
+  .slot-list a:hover .slot-list__title {
+    text-decoration: underline;
+  }
+
+  .slot-list__time {
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-size: var(--text-xl);
+  }
+
+  .slot-list__title {
+    font-weight: var(--weight-bold);
+  }
+
+  @media (max-width: 71.99rem) {
+    .cfp-page__slots,
+    .cfp-page__timeline {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
+

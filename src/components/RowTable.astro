@@ -1,0 +1,97 @@
+---
+import Stamp from './Stamp.astro';
+
+export interface Row {
+  label: string;
+  value: string | null;
+  note?: string;
+  stamp?: string;
+}
+
+interface Props {
+  rows: Row[];
+  caption: string;
+  headings?: [string, string];
+  class?: string;
+}
+
+const { rows, caption, headings, class: className } = Astro.props;
+---
+
+<table class:list={['row-table', className]}>
+  <caption>{caption}</caption>
+  {
+    headings && (
+      <thead>
+        <tr>
+          <th scope="col">{headings[0]}</th>
+          <th scope="col">{headings[1]}</th>
+        </tr>
+      </thead>
+    )
+  }
+  <tbody>
+    {
+      rows.map((row) => (
+        <tr>
+          <th scope="row">{row.label}</th>
+          <td>
+            {row.value ?? <Stamp label={row.stamp ?? '待公布'} tilt={false} />}
+            {row.note && <span class="row-table__note">{row.note}</span>}
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .row-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: var(--rule-heavy) solid var(--color-ink);
+  }
+
+  caption {
+    padding-bottom: var(--space-3);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-black);
+    text-align: left;
+    caption-side: top;
+  }
+
+  thead th {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: var(--rule-thin) solid var(--color-ink);
+    color: var(--color-ink-soft);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-align: left;
+  }
+
+  tbody th,
+  tbody td {
+    padding: var(--space-4) var(--space-3);
+    border-bottom: var(--rule-hair) solid var(--color-ink);
+    vertical-align: top;
+    text-align: left;
+  }
+
+  tbody th {
+    width: 32%;
+    font-size: var(--text-md);
+    font-weight: var(--weight-black);
+  }
+
+  tbody td {
+    color: var(--color-ink);
+  }
+
+  .row-table__note {
+    display: block;
+    margin-top: var(--space-1);
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+</style>
+

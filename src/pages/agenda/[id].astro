@@ -1,0 +1,397 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Ticket from '../../components/Ticket.astro';
+import Stamp from '../../components/Stamp.astro';
+import Icon from '../../components/Icon.astro';
+import PunchToggle from '../../components/agenda/PunchToggle.astro';
+import Words from '../../components/Words.astro';
+import { sessions, typeLabels, isListed } from '../../data/sessions';
+import { roomById } from '../../data/rooms';
+import { site } from '../../data/site';
+import { durationLabel, hhmm, minutesOf } from '../../utils/time';
+import type { Session } from '../../types/agenda';
+
+export const getStaticPaths = (() =>
+  sessions.filter(isListed).map((session) => ({ params: { id: session.id }, props: { session } }))) satisfies GetStaticPaths;
+
+interface Props {
+  session: Session;
+}
+
+const { session } = Astro.props;
+const roomNames = session.rooms === 'all' ? ['全體'] : session.rooms.map((r) => roomById(r).name);
+
+const sameRoom =
+  session.rooms === 'all'
+    ? sessions.filter((s) => s.rooms === 'all' && isListed(s))
+    : sessions.filter((s) => isListed(s) && s.rooms !== 'all' && s.rooms[0] === session.rooms[0]);
+sameRoom.sort((a, b) => minutesOf(a.start) - minutesOf(b.start));
+const index = sameRoom.findIndex((s) => s.id === session.id);
+const prev = index > 0 ? sameRoom[index - 1] : undefined;
+const next = index >= 0 && index < sameRoom.length - 1 ? sameRoom[index + 1] : undefined;
+---
+
+<BaseLayout
+  title={session.title}
+  description={`${session.title}｜QRACON 2026 議程草案，${site.dateLabel} ${hhmm(session.start)}–${hhmm(session.end)}，${roomNames.join('、')}。`}
+>
+  <div class="wrap detail">
+    <a class="back" href="/agenda/">
+      <Icon name="arrow-left" size={18} />
+      <span>回時刻表</span>
+    </a>
+
+    <Ticket class="detail__ticket" stamp={site.rocDate} labelledby="session-title">
+      <p class="dt-issuer">
+        <span>{typeLabels[session.type]}</span>
+        <Stamp label="草案" tilt={false} />
+      </p>
+      <h1 class="dt-title" id="session-title"><Words text={session.title} /></h1>
+      <dl class="dt-rows">
+        <div>
+          <dt>日期</dt>
+          <dd>
+            <time datetime={site.date}>{site.dateLabel}</time><span class="dt-cjk">（{site.weekday}）</span>
+          </dd>
+        </div>
+        <div>
+          <dt>時間</dt>
+          <dd>
+            <time datetime={session.start}>{hhmm(session.start)}</time>–<time datetime={session.end}
+              >{hhmm(session.end)}</time
+            ><span class="dt-cjk dt-duration">{durationLabel(session.start, session.end)}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>場地</dt>
+          <dd class="dt-cjk">{roomNames.join('、')}</dd>
+        </div>
+      </dl>
+      <div class="dt-actions">
+        <PunchToggle id={session.id} title={session.title} variant="full" />
+      </div>
+    </Ticket>
+
+    <div class="detail__body">
+      <section aria-labelledby="speakers-title">
+        <h2 id="speakers-title">講者</h2>
+        <p><Stamp label="待公布" tilt={false} /></p>
+      </section>
+
+      <section aria-labelledby="abstract-title">
+        <h2 id="abstract-title">摘要</h2>
+        {session.abstract ? <p>{session.abstract}</p> : <p><Stamp label="待公布" tilt={false} /></p>}
+      </section>
+
+      {
+        session.note && (
+          <section aria-labelledby="note-title">
+            <h2 id="note-title">草案備註</h2>
+            <p>{session.note}</p>
+          </section>
+        )
+      }
+    </div>
+
+    {
+      (prev || next) && (
+        <nav class="stops" aria-label={`${roomNames[0]}的前後場次`}>
+          <p class="stops__room">{roomNames[0]}</p>
+          <ol role="list">
+            {prev && (
+              <li class="stops__stop">
+                <a href={`/agenda/${prev.id}/`}>
+                  <span class="stops__dot" aria-hidden="true" />
+                  <span class="stops__label">上一場</span>
+                  <span class="stops__time">{hhmm(prev.start)}</span>
+                  <span class="stops__title"><Words text={prev.title} /></span>
+                </a>
+              </li>
+            )}
+            <li class="stops__stop is-current" aria-current="page">
+              <span class="stops__dot" aria-hidden="true" />
+              <span class="stops__label">這一場</span>
+              <span class="stops__time">{hhmm(session.start)}</span>
+              <span class="stops__title"><Words text={session.title} /></span>
+            </li>
+            {next && (
+              <li class="stops__stop">
+                <a href={`/agenda/${next.id}/`}>
+                  <span class="stops__dot" aria-hidden="true" />
+                  <span class="stops__label">下一場</span>
+                  <span class="stops__time">{hhmm(next.start)}</span>
+                  <span class="stops__title"><Words text={next.title} /></span>
+                </a>
+              </li>
+            )}
+          </ol>
+        </nav>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .detail {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: var(--space-7);
+    padding-top: var(--space-7);
+  }
+
+  .back {
+    grid-column: 1 / -1;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+  }
+
+  .back:hover span {
+    text-decoration: underline;
+  }
+
+  
+  .detail :global(.detail__ticket) {
+    grid-column: 1 / span 8;
+    view-transition-name: vt-session;
+  }
+
+  .dt-issuer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: var(--rule-hair) solid var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.1em;
+  }
+
+  .dt-title {
+    margin-block: var(--space-5);
+    font-size: var(--text-3xl);
+    letter-spacing: 0.02em;
+  }
+
+  .dt-rows {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-7);
+    padding-block: var(--space-3);
+    border-block: var(--rule-hair) solid var(--color-ink);
+  }
+
+  .dt-rows dt {
+    color: var(--color-ink-soft);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+  }
+
+  .dt-rows dd {
+    margin: 0;
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-size: var(--text-xl);
+    letter-spacing: 0.04em;
+  }
+
+  .dt-cjk {
+    font-family: var(--font-sans);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-base);
+    letter-spacing: 0;
+  }
+
+  .dt-duration {
+    margin-left: var(--space-3);
+    color: var(--color-ink-soft);
+    font-weight: var(--weight-regular);
+    font-size: var(--text-sm);
+  }
+
+  .dt-actions {
+    margin-top: var(--space-5);
+    padding-bottom: var(--space-4);
+  }
+
+  .detail__body {
+    grid-column: 1 / span 7;
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .detail__body h2 {
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: var(--rule-heavy) solid var(--color-ink);
+    font-size: var(--text-xl);
+  }
+
+  .detail__body p {
+    max-width: var(--measure);
+  }
+
+  
+  .stops {
+    grid-column: 1 / -1;
+  }
+
+  .stops__room {
+    margin-bottom: var(--space-3);
+    font-weight: var(--weight-black);
+  }
+
+  .stops ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    margin: 0;
+  }
+
+  .stops__stop {
+    position: relative;
+  }
+
+  .stops__stop::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0.5rem;
+    height: var(--rule-heavy);
+    translate: 0 -50%;
+    background: var(--color-ink);
+  }
+
+  .stops__stop:last-child::before {
+    right: auto;
+    width: 1rem;
+  }
+
+  .stops__stop a,
+  .stops__stop.is-current {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--space-3);
+    row-gap: var(--space-1);
+    padding-right: var(--space-5);
+    text-decoration: none;
+  }
+
+  .stops__dot {
+    position: relative;
+    grid-row: 1;
+    width: 1rem;
+    height: 1rem;
+    border: var(--rule-heavy) solid var(--color-ink);
+    border-radius: 50%;
+    background: var(--color-white);
+  }
+
+  .stops__stop.is-current .stops__dot {
+    background: var(--color-ink);
+    scale: 1.3;
+  }
+
+  .stops__label {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    margin-top: var(--space-2);
+    color: var(--color-ink-soft);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+  }
+
+  .stops__time {
+    grid-row: 3;
+    grid-column: 1 / -1;
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-size: var(--text-lg);
+  }
+
+  .stops__title {
+    grid-row: 4;
+    grid-column: 1 / -1;
+    font-weight: var(--weight-bold);
+  }
+
+  .stops__stop a:hover .stops__title {
+    text-decoration: underline;
+  }
+
+  
+  @media (max-width: 47.99rem) {
+    .stops ol {
+      grid-template-columns: 1fr;
+    }
+
+    .stops__stop {
+      padding-bottom: var(--space-5);
+    }
+
+    .stops__stop::before,
+    .stops__stop:last-child::before {
+      left: calc(0.5rem - var(--rule-heavy) / 2);
+      right: auto;
+      top: 0.5rem;
+      bottom: -0.5rem;
+      width: var(--rule-heavy);
+      height: auto;
+      translate: none;
+    }
+
+    .stops__stop:last-child::before {
+      display: none;
+    }
+
+    .stops__stop a,
+    .stops__stop.is-current {
+      grid-template-columns: 1rem 1fr;
+      column-gap: var(--space-4);
+      padding-right: 0;
+    }
+
+    .stops__dot {
+      grid-column: 1;
+    }
+
+    .stops__label,
+    .stops__time,
+    .stops__title {
+      grid-column: 2;
+    }
+
+    .stops__label {
+      grid-row: 1;
+      margin-top: 0;
+    }
+
+    .stops__time {
+      grid-row: 2;
+    }
+
+    .stops__title {
+      grid-row: 3;
+    }
+  }
+
+  @media (max-width: 71.99rem) {
+    .detail :global(.detail__ticket),
+    .detail__body {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
+
+<script>
+  import { initPunches } from '../../scripts/punches';
+  initPunches();
+</script>
+

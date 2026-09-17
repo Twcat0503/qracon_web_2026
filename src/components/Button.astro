@@ -1,0 +1,87 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import Icon from './Icon.astro';
+
+type Variant = 'ink' | 'line';
+type IconName = 'arrow-right' | 'arrow-left' | 'arrow-up-right';
+
+type Props = {
+  href?: string;
+  variant?: Variant;
+  icon?: IconName;
+  iconAt?: 'start' | 'end';
+  class?: string;
+} & Omit<HTMLAttributes<'a'> & HTMLAttributes<'button'>, 'class'>;
+
+const { href, variant = 'ink', icon, iconAt = 'end', class: className, ...rest } = Astro.props;
+const Tag = href ? 'a' : 'button';
+const attrs = href ? { href } : { type: 'button' as const };
+---
+
+<Tag class:list={['btn', `btn--${variant}`, className]} {...attrs} {...rest}>
+  {icon && iconAt === 'start' && <Icon name={icon} size={18} />}
+  <span><slot /></span>
+  {icon && iconAt === 'end' && <Icon name={icon} size={18} />}
+</Tag>
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-5);
+    border: var(--rule-mid) solid var(--color-ink);
+    border-radius: var(--radius-chip);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-base);
+    line-height: var(--leading-snug);
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      translate var(--dur-fast) var(--ease-out);
+  }
+
+  .btn--ink {
+    background: var(--color-ink);
+    color: var(--color-white);
+  }
+
+  .btn--ink:hover {
+    background: var(--color-white);
+    color: var(--color-ink);
+  }
+
+  .btn--line {
+    background: transparent;
+    color: var(--color-ink);
+  }
+
+  .btn--line:hover {
+    background: var(--color-ink);
+    color: var(--color-white);
+  }
+
+  .btn:active {
+    background: var(--color-paper-deep);
+    color: var(--color-ink);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .btn:active {
+      translate: 0 1px;
+    }
+
+    .btn :global(.icon) {
+      transition: translate var(--dur-base) var(--ease-out);
+    }
+
+    .btn:hover :global(.icon) {
+      translate: 3px 0;
+    }
+  }
+</style>
+

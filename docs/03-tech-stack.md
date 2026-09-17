@@ -14,13 +14,20 @@
 
 | 項目     | 建議                                 | 理由                                                    |
 | -------- | ------------------------------------ | ------------------------------------------------------- |
-| 捲動動畫 | **GSAP + ScrollTrigger**             | 與 Astro 相容，時間軸控制精確，SITCON 已驗證。          |
-| 平滑捲動 | **Lenis**                            | 輕量，可與 GSAP ticker 同步，避免兩套 RAF 打架。        |
 | 樣式     | **原生 CSS + CSS Custom Properties** | 見下方「樣式方案取捨」。                                |
 | 圖示     | `@lucide/astro`                      | 編譯期 inline SVG，零執行期成本。                       |
 | 圖片     | Astro `<Image />` + sharp            | 自動 WebP/AVIF、尺寸標註防 CLS。                        |
 | 部署     | **Cloudflare Pages**                 | 使用者環境已有 Cloudflare 工具鏈；PR preview 開箱即用。 |
 | 格式化   | Prettier + `prettier-plugin-astro`   | —                                                       |
+
+## ✅ 動效：不用動畫函式庫（定案 2026-09-12）
+
+原本建議的 GSAP + ScrollTrigger 與 Lenis **不採用**。動效規格見 `06-motion.md`，實作只用平台原生能力：
+
+- 捲動敘事只有首屏一段，由干涉場自己的 `uCollapse` 讀捲動位置驅動，不需要時間軸函式庫。
+- 狀態與回饋用 CSS transition／keyframes；需要中斷或動態值的（亮牌點燈、收藏數字翻動）用 Web Animations API。
+- 換頁連續性用跨文件 View Transitions（`@view-transition`），不支援的瀏覽器照常換頁，零 JS 成本。
+- 不做平滑捲動：它會干擾當天用手機查議程的操作手感，也和 reduced-motion 衝突；錨點用原生 `scroll-behavior: smooth`，reduced 時關閉。
 
 ## ✅ 樣式方案：原生 CSS + CSS 變數（定案 2026-07-28）
 

@@ -1,0 +1,155 @@
+---
+
+interface Props {
+  text: string;
+  size?: 'sm' | 'md' | 'lg';
+  mode?: 'view' | 'observed' | 'live';
+  variant?: 'board' | 'print';
+  class?: string;
+}
+
+const { text, size = 'md', mode = 'view', variant = 'board', class: className } = Astro.props;
+const trigger = { view: 'data-flap', observed: 'data-flap-observed', live: 'data-flap-live' }[mode];
+const chars = [...text];
+const isTile = (ch: string) => /[0-9A-Za-z\u3400-\u9fff]/.test(ch);
+---
+
+<span
+  class:list={['flap', variant === 'print' ? 'flap--print' : `flap--${size}`, className]}
+  {...{ [trigger]: '' }}
+  aria-hidden="true"
+>
+  {
+    chars.map((ch) =>
+      ch === ' ' ? (
+        <span class="flap__gap" />
+      ) : isTile(ch) ? (
+        <span class="flap__tile">
+          <span class="flap__char">{ch}</span>
+        </span>
+      ) : (
+        <span class="flap__sep">{ch}</span>
+      ),
+    )
+  }
+</span><span class="visually-hidden">{text}</span>
+
+<style>
+  .flap {
+    --tile-w: 1.1em;
+    display: inline-flex;
+    gap: 0.12em;
+    font-weight: var(--weight-bold);
+    line-height: 1;
+    perspective: 12em;
+    vertical-align: middle;
+  }
+
+  .flap--sm {
+    font-size: var(--text-lg);
+  }
+
+  .flap--md {
+    font-size: var(--text-2xl);
+  }
+
+  .flap--lg {
+    font-size: var(--text-3xl);
+  }
+
+  .flap__tile {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    min-width: var(--tile-w);
+    padding: 0.16em 0.08em 0.14em;
+    background: var(--flap-bg, var(--color-ink));
+    color: var(--color-white);
+    border-radius: var(--radius-tile);
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+  }
+
+  
+  .flap__tile::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: var(--rule-hair);
+    background: var(--color-ink-soft);
+  }
+
+  .flap__gap {
+    display: inline-block;
+    width: 0.35em;
+  }
+
+  .flap__sep {
+    align-self: center;
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    line-height: 1;
+  }
+
+  .flap__char {
+    display: block;
+    transform-origin: 50% 50%;
+  }
+
+  
+  .flap--print {
+    gap: 0;
+    font-weight: inherit;
+    line-height: inherit;
+    vertical-align: baseline;
+    perspective: 6em;
+  }
+
+  .flap--print .flap__tile {
+    min-width: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    border-radius: 0;
+    font-family: inherit;
+    font-weight: inherit;
+    overflow: visible;
+  }
+
+  .flap--print .flap__tile::after {
+    content: none;
+  }
+
+  .flap--print {
+    align-items: baseline;
+  }
+
+  .flap--print .flap__sep {
+    align-self: baseline;
+    font-family: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+  }
+
+  .flap__char.is-flipping {
+    animation: flap-fall var(--dur-instant) var(--ease-flap);
+  }
+
+  @keyframes flap-fall {
+    from {
+      transform: rotateX(80deg);
+    }
+    to {
+      transform: rotateX(0);
+    }
+  }
+</style>
+
+<script>
+  import { settleFlaps } from '../scripts/flap';
+  settleFlaps();
+</script>
+

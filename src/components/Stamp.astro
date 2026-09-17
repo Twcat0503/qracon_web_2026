@@ -1,0 +1,40 @@
+---
+
+interface Props {
+  label?: string;
+  size?: 'sm' | 'md';
+  tilt?: boolean;
+  class?: string;
+}
+
+const { label = '待公布', size = 'sm', tilt = true, class: className } = Astro.props;
+---
+
+<span class:list={['stamp', `stamp--${size}`, { 'stamp--tilt': tilt }, className]}>{label}</span>
+
+<style>
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.05em 0.55em 0.1em;
+    border: var(--rule-mid) solid currentColor;
+    border-radius: var(--radius-chip);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-black);
+    letter-spacing: 0.14em;
+    line-height: var(--leading-snug);
+    white-space: nowrap;
+    vertical-align: 0.1em;
+  }
+
+  .stamp--md {
+    font-size: var(--text-sm);
+    padding: 0.15em 0.7em 0.2em;
+  }
+
+  .stamp--tilt {
+    rotate: -3deg;
+  }
+</style>
+

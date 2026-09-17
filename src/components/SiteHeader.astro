@@ -1,0 +1,363 @@
+---
+import { nav, isCurrent } from '../data/nav';
+import Icon from './Icon.astro';
+
+const path = Astro.url.pathname;
+---
+
+<header class="site-header" data-site-header>
+  <div class="site-header__bar wrap">
+    <a class="brand" href="/">
+      <span class="brand__name">QRACON</span>
+      <span class="brand__year">2026</span>
+      <span class="visually-hidden">學生量子電腦年會首頁</span>
+    </a>
+
+    <button
+      class="menu-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="site-nav"
+      data-menu-toggle
+    >
+      <span class="menu-toggle__icon menu-toggle__icon--open"><Icon name="menu" size={22} /></span>
+      <span class="menu-toggle__icon menu-toggle__icon--close"><Icon name="close" size={22} /></span>
+      <span class="menu-toggle__label">選單</span>
+    </button>
+
+    <nav class="route" id="site-nav" aria-label="主要導覽">
+      <ol class="route__line" role="list">
+        {
+          nav.map((item, i) => {
+            const current = isCurrent(item.href, path);
+            return (
+              <li class:list={['route__stop', { 'is-current': current }]} style={`--i: ${i}`}>
+                <a href={item.href} aria-current={current ? 'page' : undefined}>
+                  <span class="route__dot" aria-hidden="true" />
+                  <span class="route__label">{item.label}</span>
+                </a>
+              </li>
+            );
+          })
+        }
+      </ol>
+    </nav>
+  </div>
+  <script is:inline>
+    (function () {
+      var marks = document.querySelectorAll('.route__stop.is-current .route__dot, .route__stop.is-current .route__label');
+      function guard() {
+        marks.forEach(function (el) {
+          var r = el.getBoundingClientRect();
+          var off = r.width === 0 || r.bottom <= 0 || r.top >= innerHeight;
+          el.style.viewTransitionName = off ? 'none' : '';
+        });
+      }
+      addEventListener('pageswap', guard);
+      addEventListener('pagereveal', guard);
+    })();
+  </script>
+</header>
+
+<style>
+  .site-header {
+    position: relative;
+    z-index: var(--z-header);
+    background: var(--color-paper);
+    border-bottom: var(--rule-heavy) solid var(--color-ink);
+  }
+
+  .site-header__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    min-height: 4rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-size: var(--text-xl);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .brand__year {
+    padding: 0.18em 0.3em 0.14em;
+    background: var(--color-ink);
+    color: var(--color-white);
+    border-radius: var(--radius-tile);
+    font-size: 0.72em;
+    letter-spacing: 0.08em;
+  }
+
+  
+  .route {
+    margin-inline-start: auto;
+  }
+
+  
+  .route__line {
+    --stop: 5.25rem;
+    --dot: 0.8125rem;
+    --pad-top: 0.5rem;
+    position: relative;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--stop);
+    margin: 0;
+  }
+
+  .route__line::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--stop) / 2);
+    right: calc(var(--stop) / 2);
+    top: calc(var(--pad-top) + var(--dot) / 2);
+    height: var(--rule-heavy);
+    translate: 0 -50%;
+    background: var(--color-ink);
+  }
+
+  .route__stop {
+    position: relative;
+  }
+
+  .route__stop a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: var(--pad-top) var(--space-1) var(--space-2);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    line-height: 1.35;
+    white-space: nowrap;
+  }
+
+  .route__dot {
+    position: relative;
+    width: var(--dot);
+    height: var(--dot);
+    flex: none;
+    border: var(--rule-heavy) solid var(--color-ink);
+    border-radius: 50%;
+    background: var(--color-white);
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      scale var(--dur-fast) var(--ease-out);
+  }
+
+  .route__label {
+    padding: 0 0.4em;
+    border-radius: var(--radius-tile);
+  }
+
+  .route__stop a:hover .route__dot {
+    background: var(--color-ink);
+  }
+
+  .route__stop a:hover .route__label {
+    text-decoration: underline;
+    text-decoration-thickness: var(--rule-mid);
+    text-underline-offset: 0.3em;
+  }
+
+  
+  .route__stop.is-current .route__dot {
+    background: var(--color-ink);
+    scale: 1.25;
+    view-transition-name: route-dot;
+  }
+
+  .route__stop.is-current .route__label {
+    background: var(--color-ink);
+    color: var(--color-white);
+    font-weight: var(--weight-bold);
+    view-transition-name: route-label;
+  }
+
+  
+  .menu-toggle {
+    display: none;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    margin-inline-start: auto;
+    padding: var(--space-1) var(--space-3);
+    border: var(--rule-mid) solid var(--color-ink);
+    border-radius: var(--radius-chip);
+    background: transparent;
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+  }
+
+  .menu-toggle__icon {
+    display: inline-flex;
+  }
+
+  .menu-toggle__icon--close {
+    display: none;
+  }
+
+  .site-header[data-open] .menu-toggle__icon--open {
+    display: none;
+  }
+
+  .site-header[data-open] .menu-toggle__icon--close {
+    display: inline-flex;
+  }
+
+  @media (max-width: 71.99rem) {
+    .site-header__bar {
+      flex-wrap: wrap;
+    }
+
+    .menu-toggle {
+      display: inline-flex;
+    }
+
+    .route {
+      display: none;
+      flex-basis: 100%;
+      margin: 0;
+      padding-block: var(--space-2) var(--space-5);
+    }
+
+    .site-header[data-open] .route {
+      display: block;
+    }
+
+    
+    .route__line {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    
+    .route__line::before {
+      inset-inline: auto;
+      left: 1rem;
+      top: var(--space-5);
+      bottom: var(--space-5);
+      width: var(--rule-heavy);
+      height: auto;
+      translate: -50% 0;
+    }
+
+    .route__stop {
+      padding-inline: 0;
+    }
+
+    .route__stop a {
+      flex-direction: row;
+      width: 100%;
+      min-height: 3rem;
+      gap: var(--space-4);
+      padding: 0 0.5rem;
+      background: transparent;
+      font-size: var(--text-lg);
+    }
+
+    .route__dot {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  
+  @media (max-width: 71.99rem) and (prefers-reduced-motion: no-preference) {
+    .route {
+      clip-path: inset(0 0 100% 0);
+      transition:
+        clip-path var(--dur-fast) var(--ease-in-out),
+        display var(--dur-fast) allow-discrete;
+    }
+
+    .site-header[data-open] .route {
+      clip-path: inset(0);
+      transition-duration: var(--dur-view);
+      transition-timing-function: var(--ease-out);
+    }
+
+    @starting-style {
+      .site-header[data-open] .route {
+        clip-path: inset(0 0 100% 0);
+      }
+    }
+
+    .site-header[data-open] .route__line::before {
+      transform-origin: top;
+      animation: route-draw var(--dur-slow) var(--ease-out);
+    }
+
+    .site-header[data-open] .route__stop {
+      animation: route-stop var(--dur-view) var(--ease-out) backwards;
+      animation-delay: calc(var(--i) * 30ms);
+    }
+
+    @keyframes route-draw {
+      from {
+        scale: 1 0;
+      }
+    }
+
+    @keyframes route-stop {
+      from {
+        opacity: 0;
+        translate: 0 -0.5rem;
+      }
+    }
+  }
+
+  
+  @media (max-width: 71.99rem) {
+    :global(html:not(.js)) .route {
+      display: block;
+      clip-path: none;
+    }
+    :global(html:not(.js)) .menu-toggle {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-site-header]');
+  const toggle = header?.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const navEl = header?.querySelector<HTMLElement>('#site-nav');
+
+  if (header && toggle && navEl) {
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute('aria-expanded', String(open));
+      header.toggleAttribute('data-open', open);
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && header.hasAttribute('data-open')) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+
+    navEl.addEventListener('click', (event) => {
+      if ((event.target as HTMLElement).closest('a')) setOpen(false);
+    });
+
+    window.matchMedia('(min-width: 72rem)').addEventListener('change', (event) => {
+      if (event.matches) setOpen(false);
+    });
+  }
+</script>
+

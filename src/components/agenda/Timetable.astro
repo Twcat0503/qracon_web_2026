@@ -1,0 +1,645 @@
+---
+
+import { sessions, typeLabels, isListed, phases } from '../../data/sessions';
+import { rooms, roomIndex, roomById } from '../../data/rooms';
+import { hhmm, minutesOf, toMinutes } from '../../utils/time';
+import type { Session } from '../../types/agenda';
+import PunchToggle from './PunchToggle.astro';
+import Words from '../Words.astro';
+
+const DAY_START = toMinutes('08:00');
+const DAY_END = toMinutes('17:30');
+const SLOT = 15;
+const ROWS = (DAY_END - DAY_START) / SLOT;
+const FIRST_ROOM_COL = 3;
+
+const row = (minutes: number) => 2 + (minutes - DAY_START) / SLOT;
+const firstRoom = (s: Session) => (s.rooms === 'all' ? -1 : (roomIndex.get(s.rooms[0]!) ?? 0));
+const cols = (s: Session): [number, number] => {
+  if (s.rooms === 'all') return [FIRST_ROOM_COL, FIRST_ROOM_COL + rooms.length];
+  const idx = s.rooms.map((r) => roomIndex.get(r) ?? 0);
+  return [FIRST_ROOM_COL + Math.min(...idx), FIRST_ROOM_COL + Math.max(...idx) + 1];
+};
+const roomLabel = (s: Session) =>
+  s.rooms === 'all' ? '全體' : s.rooms.map((r) => roomById(r).name).join('、');
+
+const sorted = [...sessions].sort(
+  (a, b) => minutesOf(a.start) - minutesOf(b.start) || firstRoom(a) - firstRoom(b),
+);
+
+const isBandRow = (i: number) => {
+  const t0 = DAY_START + i * SLOT;
+  const covering = sessions.filter((s) => minutesOf(s.start) < t0 + SLOT && minutesOf(s.end) > t0);
+  return covering.length > 0 && covering.every((s) => s.rooms === 'all');
+};
+const rowRuns: { band: boolean; n: number }[] = [];
+for (let i = 0; i < ROWS; i++) {
+  const band = isBandRow(i);
+  const last = rowRuns.at(-1);
+  if (last && last.band === band) last.n += 1;
+  else rowRuns.push({ band, n: 1 });
+}
+const rowTemplate = rowRuns.map((r) => `repeat(${r.n}, var(${r.band ? '--slot-band' : '--slot'}))`).join(' ');
+
+const startTimes = [...new Set(sorted.map((s) => minutesOf(s.start)))];
+const marks: number[] = [];
+for (let m = DAY_START; m < DAY_END; m += 30) marks.push(m);
+
+type Block =
+  | { kind: 'phase'; phase: (typeof phases)[number] }
+  | { kind: 'group'; minutes: number }
+  | { kind: 'session'; session: Session };
+
+const blocks: Block[] = [];
+for (const t of startTimes) {
+  const phase = phases.find((p) => toMinutes(p.from) === t);
+  if (phase) blocks.push({ kind: 'phase', phase });
+  blocks.push({ kind: 'group', minutes: t });
+  for (const s of sorted.filter((x) => minutesOf(x.start) === t)) blocks.push({ kind: 'session', session: s });
+}
+
+const clock = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+const iso = (m: number) => `2026-12-05T${clock(m)}:00+08:00`;
+const tall = (s: Session) => minutesOf(s.end) - minutesOf(s.start) >= 150 && s.rooms !== 'all';
+const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
+---
+
+<div class="tt" id="timetable" style={`--room-count: ${rooms.length}; --row-template: ${rowTemplate}`}>
+  {
+    rooms.map((room, i) => (
+      <div class="tt__room" data-col={FIRST_ROOM_COL + i} style={`--c0: ${FIRST_ROOM_COL + i}`} aria-hidden="true">
+        {room.short}
+      </div>
+    ))
+  }
+  {
+    marks.map((m) => (
+      <div class="tt__mark" data-row={row(m)} style={`--r0: ${row(m)}`} aria-hidden="true">
+        <time datetime={iso(m)}>{clock(m)}</time>
+      </div>
+    ))
+  }
+  {marks.map((m) => <div class="tt__rule" style={`--r0: ${row(m)}`} aria-hidden="true" />)}
+  {
+    blocks.map((block) => {
+      if (block.kind === 'phase') {
+        const { phase } = block;
+        return (
+          <h2
+            class="tt__phase"
+            id={phase.id}
+            style={`--r0: ${row(toMinutes(phase.from))}; --r1: ${row(toMinutes(phase.to))}`}
+          >
+            <span class="tt__phase-name">{phase.label}</span>
+            <span class="tt__phase-time">
+              {phase.from}–{phase.to}
+            </span>
+          </h2>
+        );
+      }
+      if (block.kind === 'group') {
+        return (
+          <div class="tt__group" aria-hidden="true">
+            {clock(block.minutes)}
+          </div>
+        );
+      }
+      const s = block.session;
+      const [c0, c1] = cols(s);
+      const start = minutesOf(s.start);
+      const end = minutesOf(s.end);
+      const listed = isListed(s);
+      return (
+        <article
+          class:list={['s', `s--${s.type}`, { 's--all': s.rooms === 'all', 's--tall': tall(s), 's--short': short(s) }]}
+          data-session
+          data-id={s.id}
+          data-type={s.type}
+          data-listed={String(listed)}
+          data-start={start}
+          data-end={end}
+          data-rooms={roomLabel(s)}
+          data-c0={c0}
+          data-c1={c1}
+          data-r0={row(start)}
+          data-r1={row(end)}
+          style={`--r0: ${row(start)}; --r1: ${row(end)}; --c0: ${c0}; --c1: ${c1}`}
+          aria-labelledby={`s-${s.id}`}
+        >
+          {listed && s.rooms !== 'all' && <p class="s__type">{typeLabels[s.type]}</p>}
+          <h3 class="s__title" id={`s-${s.id}`}>
+            {listed ? (
+              <a href={`/agenda/${s.id}/`}>
+                <Words text={s.title} />
+              </a>
+            ) : (
+              <Words text={s.title} />
+            )}
+          </h3>
+          <p class="s__meta">
+            <time datetime={s.start}>{hhmm(s.start)}</time>
+            <span aria-hidden="true">–</span>
+            <span class="visually-hidden">到</span>
+            <time datetime={s.end}>{hhmm(s.end)}</time>
+            <span class="s__room">{roomLabel(s)}</span>
+          </p>
+          <p class="s__status" data-status hidden />
+          {listed && <PunchToggle id={s.id} title={s.title} />}
+        </article>
+      );
+    })
+  }
+</div>
+
+<style>
+  
+  .tt {
+    border-top: var(--rule-heavy) solid var(--color-ink);
+  }
+
+  .tt__room,
+  .tt__mark,
+  .tt__rule {
+    display: none;
+  }
+
+  .tt__phase {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: var(--space-7);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-ink);
+    color: var(--color-white);
+    font-size: var(--text-xl);
+    scroll-margin-top: var(--space-4);
+  }
+
+  .tt__phase:first-of-type {
+    margin-top: 0;
+  }
+
+  .tt__phase-time {
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign);
+    font-size: var(--text-base);
+    letter-spacing: 0.06em;
+  }
+
+  .tt__group {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: var(--space-3) 0 var(--space-2);
+    border-bottom: var(--rule-thin) solid var(--color-ink);
+    background: var(--color-paper);
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-size: var(--text-2xl);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+
+  .s {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-3);
+    padding: var(--space-4) 0;
+    border-bottom: var(--rule-hair) solid var(--color-rule-fine);
+  }
+
+  .s__type,
+  .s__title,
+  .s__meta,
+  .s__status {
+    grid-column: 1;
+  }
+
+  .s :global(.punch) {
+    position: relative;
+    z-index: 1;
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+
+  .s__type {
+    color: var(--color-ink-soft);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.1em;
+  }
+
+  .s__title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-snug);
+  }
+
+  .s__title a {
+    text-decoration: none;
+  }
+
+  
+  .s__title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+
+  .s__title a:hover {
+    text-decoration: underline;
+  }
+
+  .s__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.2em;
+    margin-top: var(--space-1);
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  .s__meta time {
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign);
+    font-size: var(--text-md);
+    color: var(--color-ink);
+  }
+
+  .s__room::before {
+    content: "・";
+  }
+
+  .s__status {
+    justify-self: start;
+    margin-top: var(--space-2);
+    padding: 0.05em 0.5em;
+    border: var(--rule-mid) solid currentColor;
+    border-radius: var(--radius-chip);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-black);
+    letter-spacing: 0.1em;
+  }
+
+  .s--break {
+    color: var(--color-ink-soft);
+  }
+
+  .s--break .s__title {
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+  }
+
+  @media (max-width: 71.99rem) {
+    .s[data-dim] {
+      display: none;
+    }
+  }
+
+  
+  .s[data-state="now"] {
+    margin-inline: calc(var(--space-3) * -1);
+    padding-inline: var(--space-3);
+    background: var(--color-ink);
+    color: var(--color-white);
+    --color-focus: var(--color-white);
+    --chad-bg: var(--color-ink);
+  }
+
+  
+  @media (prefers-reduced-motion: no-preference) {
+    .tt__phase:global(.is-arriving) {
+      animation: phase-arrive var(--dur-slow) var(--ease-out);
+    }
+
+    @keyframes phase-arrive {
+      from {
+        background: var(--color-white);
+        color: var(--color-ink);
+      }
+    }
+  }
+
+  .s[data-state="now"] .s__meta,
+  .s[data-state="now"] .s__type,
+  .s[data-state="now"] .s__meta time {
+    color: var(--color-on-ink-soft);
+  }
+
+  .s[data-state="past"] {
+    color: var(--color-ink-muted);
+  }
+
+  .s[data-state="past"] .s__meta time {
+    color: inherit;
+  }
+
+  
+  @media (min-width: 72rem) {
+    .tt {
+      display: grid;
+      grid-template-columns:
+        2.25rem 3.75rem
+        repeat(var(--room-count), minmax(0, 1fr));
+      --head: 2.75rem;
+      --slot: 2.375rem;
+      --slot-band: 1.5rem;
+      grid-template-rows: var(--head) var(--row-template);
+      border: var(--rule-heavy) solid var(--color-ink);
+      background-color: var(--color-white);
+    }
+
+    
+    .tt__rule {
+      display: block;
+      grid-column: 2 / -1;
+      grid-row: var(--r0);
+      border-top: var(--rule-hair) solid var(--color-rule-fine);
+      pointer-events: none;
+    }
+
+    .tt__room {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      grid-row: 1;
+      grid-column: var(--c0);
+      padding: var(--space-1) var(--space-2);
+      background: var(--color-ink);
+      color: var(--color-white);
+      border-left: var(--rule-hair) solid var(--color-on-ink-rule);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-bold);
+      text-align: center;
+      line-height: var(--leading-tight);
+      transition:
+        background-color var(--dur-instant) var(--ease-out),
+        color var(--dur-instant) var(--ease-out);
+    }
+
+    
+    .tt__room[data-hot] {
+      background: var(--color-white);
+      color: var(--color-ink);
+    }
+
+    .tt::before {
+      content: "";
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      grid-row: 1;
+      grid-column: 1 / 3;
+      background: var(--color-ink);
+    }
+
+    .tt__mark {
+      display: block;
+      grid-column: 2;
+      grid-row: var(--r0) / span 2;
+      padding: 0.2rem var(--space-2) 0 0;
+      border-right: var(--rule-thin) solid var(--color-ink);
+      text-align: right;
+      font-family: var(--font-sign);
+      font-weight: var(--weight-sign);
+      font-size: var(--text-sm);
+      line-height: 1.2;
+      transition:
+        background-color var(--dur-instant) var(--ease-out),
+        color var(--dur-instant) var(--ease-out);
+    }
+
+    .tt__mark[data-hot] {
+      background: var(--color-ink);
+      color: var(--color-white);
+      font-weight: var(--weight-sign-heavy);
+    }
+
+    .tt__group {
+      display: none;
+    }
+
+    .tt__phase {
+      grid-column: 1;
+      grid-row: var(--r0) / var(--r1);
+      margin: 0;
+      padding: var(--space-2) 0;
+      justify-content: flex-start;
+      align-items: center;
+      gap: var(--space-2);
+      border-top: var(--rule-hair) solid var(--color-on-ink-rule);
+      writing-mode: vertical-rl;
+      font-size: var(--text-sm);
+      
+      letter-spacing: 0.12em;
+    }
+
+    .tt__phase-time {
+      display: none;
+    }
+
+    .s {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto 1fr;
+      align-content: start;
+      column-gap: var(--space-1);
+      grid-row: var(--r0) / var(--r1);
+      grid-column: var(--c0) / var(--c1);
+      margin: 0 0 var(--rule-hair) var(--rule-hair);
+      padding: 0.3rem 0.3rem 0.35rem 0.5rem;
+      border: 0;
+      background: var(--color-white);
+      outline: var(--rule-thin) solid var(--color-ink);
+      outline-offset: calc(var(--rule-thin) * -1);
+      overflow: hidden;
+      transition: opacity var(--dur-base) var(--ease-out);
+    }
+
+    .s :global(.punch) {
+      --punch-size: 1.5rem;
+      grid-column: 2;
+      grid-row: 1;
+      align-self: center;
+    }
+
+    .s__type,
+    .s__status {
+      grid-column: 1;
+      grid-row: 1;
+      align-self: center;
+      min-height: 1.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .s__type {
+      font-size: var(--text-xs);
+      line-height: 1.3;
+    }
+
+    
+    .s:has(.s__status:not([hidden])) .s__type {
+      display: none;
+    }
+
+    .s__title {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      font-size: var(--text-sm);
+      line-height: 1.35;
+    }
+
+    .s--break .s__title {
+      grid-row: 1;
+    }
+
+    .s__meta {
+      grid-column: 1 / -1;
+      grid-row: 3;
+      align-self: end;
+      font-size: var(--text-xs);
+    }
+
+    
+    .s--short .s__meta {
+      display: none;
+    }
+
+    .s__meta time {
+      font-size: var(--text-xs);
+    }
+
+    .s__room {
+      display: none;
+    }
+
+    .s__status {
+      justify-self: start;
+      min-height: 0;
+      margin-top: 0;
+      font-size: var(--text-xs);
+    }
+
+    
+    .s--all {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-4);
+      padding: 0 var(--space-4);
+      background: var(--color-ink);
+      color: var(--color-white);
+      outline-color: var(--color-ink);
+      --color-focus: var(--color-white);
+    }
+
+    .s--all .s__title {
+      font-size: var(--text-lg);
+      letter-spacing: 0.3em;
+    }
+
+    .s--all .s__meta {
+      margin: 0;
+      color: var(--color-on-ink-soft);
+    }
+
+    .s--all .s__meta time {
+      color: inherit;
+    }
+
+    .s--all .s__room {
+      display: none;
+    }
+
+    .s--all {
+      --chad-bg: var(--color-ink);
+    }
+
+    
+    .s--break:not(.s--all) {
+      background-color: var(--color-paper);
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent 0 0.4rem,
+        var(--color-rule-fine) 0.4rem calc(0.4rem + var(--rule-hair))
+      );
+      color: var(--color-ink);
+    }
+
+    .s--break .s__title {
+      font-size: var(--text-sm);
+      font-weight: var(--weight-bold);
+    }
+
+    
+    .s--tall {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+      align-items: center;
+      padding: var(--space-5) 0.25rem;
+    }
+
+    .s--tall .s__title {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      font-size: var(--text-md);
+      letter-spacing: 0.2em;
+      line-height: 1.2;
+    }
+
+    
+    .s--tall .s__title :global(.words) {
+      word-break: normal;
+    }
+
+    .s--tall .s__type {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+    }
+
+    .s--tall .s__type {
+      display: block;
+      min-height: 0;
+      align-self: center;
+      white-space: nowrap;
+    }
+
+    .s--tall .s__meta {
+      flex-direction: column;
+      align-items: center;
+      align-self: center;
+      margin-top: auto;
+    }
+
+    .s--tall :global(.punch) {
+      order: -1;
+    }
+
+    .s[data-dim] {
+      opacity: 0.18;
+    }
+
+    .s[data-state="now"] {
+      margin: 0 0 var(--rule-hair) var(--rule-hair);
+      padding-inline: 0.5rem 1.9rem;
+      outline-width: var(--rule-heavy);
+      outline-offset: calc(var(--rule-heavy) * -1);
+      z-index: 1;
+    }
+
+    .s--all[data-state="now"] {
+      padding-inline: var(--space-4);
+    }
+  }
+</style>
+

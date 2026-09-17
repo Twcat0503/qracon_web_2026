@@ -1,0 +1,204 @@
+---
+import { Image } from 'astro:assets';
+import cat from '../assets/brand/schrodinger-cat-leaping.png';
+import { nav } from '../data/nav';
+import { site } from '../data/site';
+import Stamp from './Stamp.astro';
+
+const links = nav.filter((item) => item.href !== '/');
+---
+
+<footer class="site-footer">
+  <div class="site-footer__inner wrap">
+    <div class="terminus">
+      <p class="terminus__date">
+        <time datetime={site.date}>{site.dateLabel}</time><span class="terminus__weekday"
+          >（{site.weekday}）</span
+        >
+      </p>
+      <p class="terminus__place">{site.venue.org} {site.venue.name}</p>
+      <p class="terminus__name">{site.name} {site.nameZh}・{site.editionLabel}</p>
+    </div>
+
+    <Image
+      class="terminus__cat"
+      src={cat}
+      alt=""
+      widths={[320, 480, 720, 960]}
+      sizes="(min-width: 64rem) 24rem, 70vw"
+      loading="lazy"
+    />
+
+    <nav class="footer-nav" aria-label="頁尾導覽">
+      <ul role="list">
+        {
+          links.map((item) => (
+            <li>
+              <a href={item.href}>{item.label}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <dl class="footer-meta">
+      <div>
+        <dt>指導單位</dt>
+        <dd>{site.advisor}</dd>
+      </div>
+      <div>
+        <dt>主辦單位</dt>
+        <dd>
+          {site.organizers ? site.organizers.join('、') : <Stamp label="待確認" tilt={false} />}
+        </dd>
+      </div>
+      <div>
+        <dt>聯絡信箱</dt>
+        <dd>
+          {
+            site.contactEmail ? (
+              <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a>
+            ) : (
+              <Stamp label="待公布" tilt={false} />
+            )
+          }
+        </dd>
+      </div>
+    </dl>
+
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    position: relative;
+    margin-top: var(--space-10);
+    border-top: var(--rule-block) solid var(--color-ink);
+  }
+
+  
+  .site-footer::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: calc((var(--rule-block) + var(--space-1) + var(--rule-hair)) * -1);
+    height: var(--rule-hair);
+    background: var(--color-ink);
+  }
+
+  .site-footer__inner {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: var(--space-6);
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .terminus {
+    grid-column: 1 / span 7;
+    align-self: end;
+  }
+
+  .terminus__date {
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-size: var(--text-display);
+    line-height: 0.95;
+    letter-spacing: 0.01em;
+  }
+
+  .terminus__weekday {
+    font-family: var(--font-sans);
+    font-weight: var(--weight-black);
+    font-size: 0.4em;
+    vertical-align: 0.35em;
+  }
+
+  .terminus__place {
+    margin-top: var(--space-3);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-black);
+    line-height: var(--leading-tight);
+  }
+
+  .terminus__name {
+    margin-top: var(--space-2);
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  .terminus__cat {
+    grid-column: 9 / span 4;
+    width: 100%;
+    max-width: 24rem;
+    justify-self: end;
+    margin-top: calc(var(--space-9) * -1);
+    rotate: -4deg;
+  }
+
+  .footer-nav {
+    grid-column: 1 / -1;
+    padding-top: var(--space-5);
+    border-top: var(--rule-thin) solid var(--color-ink);
+  }
+
+  .footer-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-6);
+    margin: 0;
+  }
+
+  .footer-nav a {
+    display: inline-block;
+    padding-block: var(--space-2);
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+  }
+
+  .footer-nav a:hover {
+    text-decoration: underline;
+  }
+
+  .footer-meta {
+    grid-column: 1 / span 8;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4) var(--space-7);
+  }
+
+  .footer-meta dt {
+    color: var(--color-ink-soft);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+  }
+
+  .footer-meta dd {
+    margin: 0;
+    font-weight: var(--weight-bold);
+  }
+
+  @media (max-width: 47.99rem) {
+    .terminus {
+      grid-column: 1 / -1;
+      order: 2;
+    }
+
+    .terminus__cat {
+      grid-column: 3 / -1;
+      order: 1;
+      max-width: 16rem;
+      margin-top: calc(var(--space-8) * -1);
+    }
+
+    .footer-nav {
+      order: 3;
+    }
+
+    .footer-meta {
+      grid-column: 1 / -1;
+      order: 4;
+    }
+  }
+</style>
+

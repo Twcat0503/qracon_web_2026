@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import Button from '../components/Button.astro';
+---
+
+<BaseLayout title="找不到這一頁">
+  <PageHead title="找不到這一頁" lede="網址可能打錯了，或這一頁還沒上線。" />
+  <div class="wrap not-found">
+    <Button href="/" icon="arrow-left" iconAt="start">回首頁</Button>
+    <Button href="/agenda/" variant="line" icon="arrow-right">看議程</Button>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+</style>

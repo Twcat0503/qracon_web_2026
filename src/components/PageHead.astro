@@ -1,0 +1,61 @@
+---
+import Stamp from './Stamp.astro';
+
+interface Props {
+  title: string;
+  lede?: string;
+  status?: string;
+}
+
+const { title, lede, status } = Astro.props;
+---
+
+<header class="page-head wrap">
+  <h1 class="page-head__title">
+    <span>{title}</span>
+    {status && <Stamp label={status} size="md" class="page-head__stamp" />}
+  </h1>
+  {lede && <p class="page-head__lede">{lede}</p>}
+  <slot />
+</header>
+
+<style>
+  .page-head {
+    padding-block: var(--space-8) var(--space-7);
+  }
+
+  .page-head__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+    font-size: var(--text-display);
+    letter-spacing: 0.06em;
+    line-height: 1.05;
+  }
+
+  .page-head__title :global(.page-head__stamp) {
+    font-size: var(--text-base);
+  }
+
+  
+  @media (prefers-reduced-motion: no-preference) {
+    .page-head__title :global(.page-head__stamp) {
+      animation: stamp-land var(--dur-base) var(--ease-out) 180ms backwards;
+    }
+
+    @keyframes stamp-land {
+      from {
+        opacity: 0;
+        scale: 1.5;
+      }
+    }
+  }
+
+  .page-head__lede {
+    max-width: var(--measure);
+    margin-top: var(--space-5);
+    font-size: var(--text-lg);
+  }
+</style>
+

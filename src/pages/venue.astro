@@ -1,0 +1,199 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import StationSign from '../components/StationSign.astro';
+import RowTable from '../components/RowTable.astro';
+import Stamp from '../components/Stamp.astro';
+import { rooms } from '../data/rooms';
+import { sessions, isListed } from '../data/sessions';
+import { minutesOf } from '../utils/time';
+import { site } from '../data/site';
+import type { RoomId } from '../types/agenda';
+
+const usage = (id: RoomId) => {
+  const inRoom = sessions
+    .filter((s) => isListed(s) && s.rooms !== 'all' && s.rooms.includes(id))
+    .sort((a, b) => minutesOf(a.start) - minutesOf(b.start));
+  if (!inRoom.length) {
+    const breaks = sessions.filter((s) => s.rooms !== 'all' && s.rooms.includes(id));
+    return breaks.length ? [...new Set(breaks.map((s) => s.title))].join('、') : '—';
+  }
+  const titles = inRoom.slice(0, 2).map((s) => s.title);
+  return inRoom.length > 2 ? `${titles.join('、')} 等 ${inRoom.length} 場` : titles.join('、');
+};
+
+const modes = [
+  { label: '高鐵', value: null },
+  { label: '臺鐵', value: null },
+  { label: '開車', value: null },
+  { label: '接駁車', value: null },
+];
+---
+
+<BaseLayout
+  title="會場與交通"
+  description={`QRACON 2026 在${site.venue.org}${site.venue.name}（${site.venue.city}）舉行。場地、平面圖與交通方式。`}
+>
+  <PageHead
+    title="會場與交通"
+    lede={`${site.venue.org} ${site.venue.name}（${site.venue.city}）`}
+  />
+
+  <div class="wrap venue-page">
+    <StationSign class="venue-page__sign" />
+
+    <section class="venue-page__map" aria-labelledby="map-title">
+      <h2 id="map-title">場地平面圖</h2>
+      <div class="map-frame">
+        <Stamp label="平面圖待取得" size="md" />
+      </div>
+    </section>
+
+    <section class="venue-page__rooms" aria-labelledby="rooms-title">
+      <h2 class="visually-hidden" id="rooms-title">場地一覽</h2>
+      <table class="rooms-table">
+        <caption>場地一覽（依議程草案）</caption>
+        <thead>
+          <tr>
+            <th scope="col">場地</th>
+            <th scope="col">容納</th>
+            <th scope="col">草案中的用途</th>
+            <th scope="col">位置</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rooms.map((room) => (
+              <tr>
+                <th scope="row">{room.name}</th>
+                <td class="tnum">{room.capacity ? `${room.capacity} 人` : '—'}</td>
+                <td>{usage(room.id)}</td>
+                <td>
+                  <Stamp label="待確認" tilt={false} />
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section class="venue-page__transport" aria-labelledby="transport-title">
+      <h2 class="visually-hidden" id="transport-title">交通方式</h2>
+      <RowTable caption="怎麼到院區" rows={modes} />
+      <RowTable
+        class="venue-page__walk"
+        caption="從院區大門到會場"
+        rows={[{ label: '步行指引', value: null }]}
+      />
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .venue-page {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: var(--space-8);
+  }
+
+  .venue-page :global(.venue-page__sign) {
+    grid-column: 1 / span 7;
+  }
+
+  .venue-page__map {
+    grid-column: 8 / span 5;
+  }
+
+  .venue-page__map h2 {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-xl);
+  }
+
+  .map-frame {
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: var(--space-4);
+    min-height: 16rem;
+    padding: var(--space-6);
+    border: var(--rule-mid) dashed var(--color-ink);
+    border-radius: var(--radius-chip);
+    background: var(--color-white);
+  }
+
+  .venue-page__rooms {
+    grid-column: 1 / -1;
+    overflow-x: auto;
+  }
+
+  .rooms-table {
+    width: 100%;
+    min-width: 40rem;
+    border-collapse: collapse;
+    border-top: var(--rule-heavy) solid var(--color-ink);
+  }
+
+  .rooms-table caption {
+    padding-bottom: var(--space-3);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-black);
+    text-align: left;
+  }
+
+  .rooms-table thead th {
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-ink);
+    color: var(--color-white);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-align: left;
+  }
+
+  .rooms-table tbody th,
+  .rooms-table td {
+    padding: var(--space-3);
+    border-bottom: var(--rule-hair) solid var(--color-ink);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .rooms-table tbody th {
+    font-weight: var(--weight-black);
+    white-space: nowrap;
+  }
+
+  .rooms-table td.tnum {
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign);
+    white-space: nowrap;
+  }
+
+  .venue-page__transport {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-7) var(--gutter);
+    align-items: start;
+  }
+
+  @media (max-width: 47.99rem) {
+    .venue-page :global(.venue-page__sign),
+    .venue-page__map {
+      grid-column: 1 / -1;
+    }
+
+    .venue-page__transport {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (min-width: 48rem) and (max-width: 71.99rem) {
+    .venue-page :global(.venue-page__sign),
+    .venue-page__map {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
+

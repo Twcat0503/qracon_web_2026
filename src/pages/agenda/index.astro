@@ -1,0 +1,393 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHead from '../../components/PageHead.astro';
+import Timetable from '../../components/agenda/Timetable.astro';
+import FlapText from '../../components/FlapText.astro';
+import { sessions, typeLabels, isListed, phases } from '../../data/sessions';
+import { site } from '../../data/site';
+import type { SessionType } from '../../types/agenda';
+
+const order: SessionType[] = [
+  'keynote',
+  'talk',
+  'lightning',
+  'workshop',
+  'submission',
+  'debate',
+  'roundtable',
+  'exhibit',
+  'screening',
+  'activity',
+];
+const present = new Set(sessions.filter(isListed).map((s) => s.type));
+const filterTypes = order.filter((t) => present.has(t));
+---
+
+<BaseLayout
+  title="議程"
+  description={`QRACON 2026 議程草案：${site.dateLabel}（${site.weekday}）在${site.venue.org}${site.venue.name}，10 處場地同時進行的一天。`}
+>
+  <link slot="head" rel="expect" href="#timetable" blocking="render" />
+  <PageHead
+    title="議程"
+    status="草案"
+    lede={`${site.dateLabel}（${site.weekday}）・${site.venue.org} ${site.venue.name}`}
+  />
+
+  <div class="wrap agenda">
+    <section class="now-board" data-now-board hidden aria-labelledby="now-title">
+      <h2 class="now-board__title" id="now-title">
+        現在 <time class="now-board__clock" data-now-clock><FlapText text="00:00" size="lg" mode="live" /></time>
+        <span class="now-board__preview" data-now-preview hidden>預覽模式</span>
+      </h2>
+      <div class="now-board__cols">
+        <div>
+          <h3>進行中</h3>
+          <ul role="list" data-now-list></ul>
+        </div>
+        <div>
+          <h3>下一場 <time class="now-board__next" data-next-time></time></h3>
+          <ul role="list" data-next-list></ul>
+        </div>
+      </div>
+    </section>
+
+    <nav class="phase-route" aria-label="時段">
+      <ol role="list">
+        {
+          phases.map((p) => (
+            <li>
+              <a href={`#${p.id}`}>
+                <span class="phase-route__dot" aria-hidden="true" />
+                <span class="phase-route__name">{p.label}</span>
+                <span class="phase-route__time">{p.from}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+
+    <div class="tt-tools" data-tt-tools hidden>
+      <fieldset class="tt-tools__types">
+        <legend>依類型篩選</legend>
+        <div class="tt-tools__chips">
+          {
+            filterTypes.map((t) => (
+              <button type="button" class="chip" data-filter-type={t} aria-pressed="false">
+                {typeLabels[t]}
+              </button>
+            ))
+          }
+        </div>
+      </fieldset>
+      <div class="tt-tools__side">
+        <button type="button" class="chip chip--punched" data-filter-punched aria-pressed="false">
+          只看已收藏<span class="chip__count">（<span data-punched-count>0</span>）</span>
+        </button>
+        <button type="button" class="tt-tools__clear" data-filter-clear hidden>清除篩選</button>
+        <p class="tt-tools__count" aria-live="polite" data-tt-count></p>
+      </div>
+    </div>
+
+    <Timetable />
+
+    <script is:inline>
+      addEventListener('pagereveal', function (event) {
+        var cells = document.querySelectorAll('[data-session]');
+        cells.forEach(function (el) { el.style.removeProperty('view-transition-name'); });
+        if (!event.viewTransition) return;
+        var id = null;
+        var from = window.navigation && navigation.activation && navigation.activation.from;
+        var match = from && from.url && new URL(from.url).pathname.match(/^\/agenda\/([^/]+)\/?$/);
+        if (match) id = match[1];
+        else {
+          try { id = sessionStorage.getItem('qracon2026:vt-session'); } catch (e) { id = null; }
+        }
+        var cell = id && document.querySelector('[data-session][data-id="' + CSS.escape(id) + '"]');
+        if (!cell) return;
+        var r = cell.getBoundingClientRect();
+        if (r.bottom <= 0 || r.top >= innerHeight) return;
+        cell.style.setProperty('view-transition-name', 'vt-session');
+        event.viewTransition.finished.finally(function () {
+          cell.style.removeProperty('view-transition-name');
+        });
+      });
+    </script>
+  </div>
+</BaseLayout>
+
+<style>
+  .agenda {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  
+  .now-board {
+    padding: var(--space-5) var(--space-6);
+    background: var(--color-ink);
+    color: var(--color-white);
+    border-radius: var(--radius-chip);
+    --color-focus: var(--color-white);
+    --flap-bg: var(--color-ink-raised);
+  }
+
+  .now-board__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-3);
+    font-size: var(--text-xl);
+  }
+
+  .now-board__clock,
+  .now-board__next {
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    letter-spacing: 0.04em;
+  }
+
+  .now-board__clock {
+    font-size: var(--text-3xl);
+  }
+
+  .now-board__preview {
+    padding: 0 0.5em;
+    border: var(--rule-mid) solid currentColor;
+    border-radius: var(--radius-chip);
+    font-size: var(--text-xs);
+    letter-spacing: 0.1em;
+  }
+
+  .now-board__cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: var(--space-5) var(--space-7);
+    margin-top: var(--space-4);
+  }
+
+  .now-board h3 {
+    padding-bottom: var(--space-2);
+    border-bottom: var(--rule-thin) solid var(--color-white);
+    font-size: var(--text-sm);
+    letter-spacing: 0.14em;
+  }
+
+  .now-board ul {
+    margin: 0;
+  }
+
+  .now-board :global(li) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0 var(--space-4);
+    padding-block: var(--space-2);
+    border-bottom: var(--rule-hair) solid var(--color-on-ink-rule);
+    color: var(--color-on-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  .now-board :global(li a) {
+    color: var(--color-white);
+    font-size: var(--text-base);
+    font-weight: var(--weight-bold);
+  }
+
+  
+  .phase-route ol {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) 0;
+    margin: 0;
+  }
+
+  .phase-route li {
+    position: relative;
+    flex: 1 1 10rem;
+  }
+
+  .phase-route li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 1.2rem;
+    height: var(--rule-heavy);
+    background: var(--color-ink);
+  }
+
+  .phase-route li:last-child::before {
+    right: auto;
+    width: 1rem;
+  }
+
+  .phase-route a {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    column-gap: var(--space-2);
+    align-items: center;
+    padding-block: 0.65rem var(--space-2);
+    text-decoration: none;
+  }
+
+  .phase-route__dot {
+    width: 1rem;
+    height: 1rem;
+    border: var(--rule-heavy) solid var(--color-ink);
+    border-radius: 50%;
+    background: var(--color-white);
+    transition: background-color var(--dur-fast) var(--ease-out);
+  }
+
+  .phase-route a:hover .phase-route__dot {
+    background: var(--color-ink);
+  }
+
+  .phase-route__name {
+    justify-self: start;
+    padding-inline: var(--space-2);
+    background: var(--color-paper);
+    font-weight: var(--weight-bold);
+  }
+
+  .phase-route a:hover .phase-route__name {
+    text-decoration: underline;
+  }
+
+  .phase-route__time {
+    grid-column: 2;
+    padding-inline: var(--space-2);
+    color: var(--color-ink-soft);
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign);
+    font-size: var(--text-sm);
+  }
+
+  @media (max-width: 47.99rem) {
+    .phase-route ol {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .phase-route li {
+      flex: none;
+    }
+
+    .phase-route li::before {
+      left: calc(0.5rem - var(--rule-heavy) / 2);
+      right: auto;
+      top: 1.2rem;
+      bottom: -1.2rem;
+      width: var(--rule-heavy);
+      height: auto;
+    }
+
+    .phase-route li:last-child::before {
+      display: none;
+    }
+
+    .phase-route a {
+      grid-template-columns: auto auto 1fr;
+      grid-template-rows: auto;
+      padding-block: 0.65rem;
+    }
+
+    .phase-route__time {
+      grid-column: 3;
+      justify-self: end;
+    }
+  }
+
+  
+  .tt-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4) var(--space-6);
+  }
+
+  .tt-tools[hidden] {
+    display: none;
+  }
+
+  .tt-tools__types {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .tt-tools__types legend {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+  }
+
+  .tt-tools__chips,
+  .tt-tools__side {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .chip {
+    min-height: 2.5rem;
+    padding: var(--space-1) var(--space-4);
+    border: var(--rule-mid) solid var(--color-ink);
+    border-radius: var(--radius-chip);
+    background: var(--color-paper);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out);
+  }
+
+  .chip:hover {
+    background: var(--color-paper-deep);
+  }
+
+  .chip[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-white);
+  }
+
+  .chip__count {
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+  }
+
+  .chip__count [data-punched-count] {
+    display: inline-block;
+  }
+
+  .tt-tools__clear {
+    min-height: 2.5rem;
+    padding: var(--space-1) var(--space-3);
+    border: 0;
+    background: transparent;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    text-decoration: underline;
+    text-underline-offset: 0.3em;
+  }
+
+  .tt-tools__count {
+    width: 100%;
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+</style>
+
+<script>
+  import { initAgenda } from '../../scripts/agenda';
+  initAgenda();
+</script>
+

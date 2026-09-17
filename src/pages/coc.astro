@@ -1,0 +1,29 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import RowTable from '../components/RowTable.astro';
+import { site } from '../data/site';
+---
+
+<BaseLayout title="行為準則" description="QRACON 2026 行為準則。">
+  <PageHead
+    title="行為準則"
+    status="原文待取得"
+  />
+
+  <div class="wrap coc-page">
+    <RowTable
+      caption="回報與協助"
+      rows={[
+        { label: '回報信箱', value: site.contactEmail },
+        { label: '現場協助', value: null },
+      ]}
+    />
+  </div>
+</BaseLayout>
+
+<style>
+  .coc-page {
+    max-width: 48rem;
+  }
+</style>

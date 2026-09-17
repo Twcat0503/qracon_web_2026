@@ -1,0 +1,105 @@
+
+:root {
+  
+  --color-paper: #d9d9d9; 
+  --color-ink: #000; 
+  --color-white: #fff; 
+
+  
+  --color-ink-soft: #4d4d4d; 
+  --color-ink-muted: #6b6b6b; 
+  --color-rule-fine: #a6a6a6; 
+  --color-paper-deep: #c9c9c9; 
+  --color-on-ink-soft: #b3b3b3; 
+  --color-on-ink-rule: #4d4d4d; 
+  --color-ink-raised: #262626; 
+
+  --color-focus: var(--color-ink);
+  --color-selection-bg: var(--color-ink);
+  --color-selection-fg: var(--color-paper);
+
+  
+  
+  --font-sans: var(--font-noto-sans-tc, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif);
+  --font-sign: var(--font-barlow-condensed, "Arial Narrow", sans-serif);
+
+  --weight-sign: 600;
+  --weight-sign-heavy: 800;
+
+  --text-xs: 0.8125rem; 
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.0625rem;
+  --text-lg: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+  --text-2xl: clamp(1.625rem, 1.3rem + 1.4vw, 2.5rem);
+  --text-3xl: clamp(2.125rem, 1.5rem + 2.6vw, 3.75rem);
+  --text-display: clamp(2.75rem, 1.6rem + 4.6vw, 6rem);
+
+  --leading-body: 1.75;
+  --leading-snug: 1.4;
+  --leading-tight: 1.15;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-bold: 700;
+  --weight-black: 900;
+
+  --tracking-sign: 0.04em;
+  --tracking-tight: -0.02em;
+
+  
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-10: 8rem;
+
+  --gutter: clamp(1rem, 0.6rem + 2vw, 2.5rem);
+  --page-max: 88rem;
+  --measure: 38em; 
+
+  
+  --rule-hair: 1px;
+  --rule-thin: 1.5px;
+  --rule-mid: 2px;
+  --rule-heavy: 3px;
+  --rule-block: 6px;
+
+  
+  --radius-tile: 3px;
+  --radius-chip: 4px;
+  --radius-ticket: 12px;
+  --radius-ticket-inner: 6px; 
+  --radius-pill: 999px;
+
+  
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); 
+  --ease-out-soft: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-flap: cubic-bezier(0.55, 0, 1, 0.45); 
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --dur-instant: 90ms;
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+  --dur-view: 380ms; 
+  --dur-slow: 520ms;
+  --dur-fall: 460ms; 
+
+  
+  
+  --drop-ticket: drop-shadow(0 0.75rem 1.25rem rgb(0 0 0 / 0.16))
+    drop-shadow(0 0.125rem 0.2rem rgb(0 0 0 / 0.12));
+
+  
+  --z-field: 0;
+  --z-content: 1;
+  --z-header: 40;
+  --z-menu: 50;
+  --z-skip: 100;
+}

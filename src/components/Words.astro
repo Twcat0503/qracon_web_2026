@@ -1,0 +1,20 @@
+---
+
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+const segmenter = new Intl.Segmenter('zh-Hant', { granularity: 'word' });
+const words = [...segmenter.segment(text)].map((s) => s.segment);
+---
+
+<span class="words">{words.map((word, i) => (i ? <><wbr />{word}</> : word))}</span>
+
+<style>
+  .words {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+</style>
+

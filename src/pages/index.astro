@@ -1,0 +1,743 @@
+---
+import { Picture } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroField from '../components/hero/HeroField.astro';
+import Ticket from '../components/Ticket.astro';
+import Stamp from '../components/Stamp.astro';
+import Button from '../components/Button.astro';
+import FlapText from '../components/FlapText.astro';
+import StationSign from '../components/StationSign.astro';
+import wordmark from '../assets/brand/qracon-wordmark.png';
+import { site } from '../data/site';
+import { sessions, isListed } from '../data/sessions';
+import { roomById } from '../data/rooms';
+import { hhmm, minutesOf, toMinutes } from '../utils/time';
+import type { RoomId } from '../types/agenda';
+
+const registrationOpen = site.registration.status === 'open' && site.registration.url;
+
+const busyRooms = (from: string, to: string) => {
+  const [a, b] = [toMinutes(from), toMinutes(to)];
+  const used = new Set<RoomId>();
+  for (const s of sessions) {
+    if (!isListed(s) || s.rooms === 'all') continue;
+    if (minutesOf(s.start) < b && minutesOf(s.end) > a) s.rooms.forEach((r) => used.add(r));
+  }
+  return used.size;
+};
+
+const byId = (id: string) => {
+  const s = sessions.find((x) => x.id === id);
+  if (!s) throw new Error(`Missing session ${id}`);
+  return s;
+};
+const roomsOf = (id: string) => {
+  const s = byId(id);
+  return s.rooms === 'all' ? '全體' : s.rooms.map((r) => roomById(r).short).join('、');
+};
+
+const board = [
+  { time: hhmm(byId('check-in').start), item: '報到', place: '全體' },
+  { time: hhmm(byId('opening').start), item: '開幕', place: '全體' },
+  { time: hhmm(byId('keynote-dialogue').start), item: '主題對談', place: '全體' },
+  { time: hhmm(byId('keynote').start), item: '主題演講', place: '全體' },
+  { time: '10:30', item: '上午分軌與場外活動', place: `${busyRooms('10:30', '12:00')} 處場地同時進行` },
+  { time: hhmm(byId('lunch-centers').start), item: '午餐', place: `${roomsOf('lunch-centers')}、${roomsOf('lunch-rooms')}` },
+  { time: '13:30', item: '下午分軌與工作坊', place: `${busyRooms('13:30', '16:00')} 處場地同時進行` },
+  { time: hhmm(byId('open-lightning').start), item: '任意閃電講', place: roomsOf('open-lightning') },
+  { time: hhmm(byId('closing').start), item: '閉幕', place: '全體' },
+  { time: hhmm(byId('departure').start), item: '賦歸', place: '—' },
+];
+
+const serial = String(site.edition).padStart(4, '0');
+---
+
+<BaseLayout>
+  <section class="hero" data-hero aria-labelledby="hero-title">
+    <div class="hero__content wrap">
+      <h1 class="hero__title" id="hero-title">
+        <Picture
+          class="hero__wordmark"
+          src={wordmark}
+          alt="QRACON 2026"
+          formats={['avif', 'webp']}
+          widths={[560, 900, 1280, 1696]}
+          sizes="(min-width: 72rem) 60vw, 92vw"
+          loading="eager"
+          fetchpriority="high"
+        />
+        <span class="visually-hidden">{site.nameZh}</span>
+      </h1>
+
+      <div class="hero__copy">
+        <p class="hero__name" aria-hidden="true">{site.nameZh}</p>
+        <p class="hero__en">{site.nameEn}</p>
+      </div>
+
+      <Ticket class="hero__ticket" slits stamp={site.rocDate} labelledby="ticket-station">
+        <h2 class="visually-hidden">活動資訊</h2>
+        <p class="tk-issuer">
+          <span>{site.nameZh}</span>
+          <span class="tk-serial"
+            >{site.editionLabel}<b class="tnum"><FlapText text={`No.${serial}`} variant="print" mode="observed" /></b></span
+          >
+        </p>
+        <p class="tk-station" id="ticket-station">
+          <span class="tk-station__org">{site.venue.org}</span>
+          <span class="tk-station__name">{site.venue.name}</span>
+          <span class="tk-station__city">（{site.venue.city}）</span>
+        </p>
+        <dl class="tk-rows">
+          <div>
+            <dt>日期</dt>
+            <dd>
+              <time datetime={site.date}
+                ><FlapText text={site.dateLabel} variant="print" mode="observed" /></time
+              ><span class="tk-weekday">（{site.weekday}）</span>
+            </dd>
+          </div>
+          <div>
+            <dt>報到</dt>
+            <dd>
+              <time datetime={`${site.date}T${site.checkIn}+08:00`}
+                ><FlapText text={site.checkIn} variant="print" mode="observed" /></time
+              >
+            </dd>
+          </div>
+          <div>
+            <dt>票價</dt>
+            <dd>{site.registration.price ?? <Stamp label="待公布" tilt={false} />}</dd>
+          </div>
+        </dl>
+        <div class="tk-actions">
+          {
+            registrationOpen ? (
+              <Button href={site.registration.url ?? undefined} icon="arrow-up-right">
+                報名取票
+              </Button>
+            ) : (
+              <Stamp label="報名即將開放" size="md" tilt={false} class="tk-status" />
+            )
+          }
+          <Button href="/agenda/" variant={registrationOpen ? 'line' : 'ink'} icon="arrow-right">
+            看議程草案
+          </Button>
+        </div>
+      </Ticket>
+    </div>
+
+    <HeroField />
+  </section>
+
+  <section class="about wrap" aria-labelledby="about-title">
+    <div class="about__text">
+      <h2 class="section-title" id="about-title">學生主導的量子年會，第四年</h2>
+      <p>
+        QRACON（{site.nameEn}）是由學生主導的量子科技年會。我們想讓學術界、產業界與教育端，在同一天、同一個院區裡交流，也想把中學到大學之間那道斷層接起來。
+      </p>
+      <p>
+        議程從量子電腦的基礎，一路排到 HPC、資安、藥物開發與量子感測；場外還有 RPG
+        導遊團、對戰遊戲和塗鴉躲貓貓。高中生和研究者，都能在時刻表上找到自己的那一場。
+      </p>
+      <p class="about__theme">
+        <span class="about__theme-label">年度主題</span>
+        {site.theme.title ?? <Stamp label="待公布" size="md" />}
+      </p>
+      <Button href="/about/" variant="line" icon="arrow-right">關於 QRACON</Button>
+    </div>
+  </section>
+
+  <section class="departures" aria-labelledby="board-title">
+    <div class="wrap departures__inner">
+      <div class="departures__head">
+        <h2 class="section-title" id="board-title">一天的時刻表</h2>
+        <p>
+          {site.dateLabel}（{site.weekday}）{site.checkIn} 開始報到。
+        </p>
+      </div>
+
+      <div class="board">
+        <table class="board__table">
+          <caption class="visually-hidden">議程草案：一天的主要時刻</caption>
+          <thead>
+            <tr>
+              <th scope="col">時刻</th>
+              <th scope="col">項目</th>
+              <th scope="col">場地</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              board.map((row) => (
+                <tr>
+                  <td class="board__time">
+                    <time datetime={`${site.date}T${row.time}+08:00`}>
+                      <FlapText text={row.time} size="sm" />
+                    </time>
+                  </td>
+                  <th scope="row" class="board__item">
+                    {row.item}
+                  </th>
+                  <td class="board__place">{row.place}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+
+        <div class="board__foot">
+          <p>
+            <Stamp label="草案" tilt={false} />
+          </p>
+          <Button href="/agenda/" variant="line" icon="arrow-right" class="board__cta">
+            看完整時刻表
+          </Button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="venue wrap" aria-labelledby="venue-title">
+    <h2 class="section-title" id="venue-title">怎麼到南部院區</h2>
+
+    <div class="venue__grid">
+      <StationSign class="venue__sign" />
+
+      <div class="venue__modes">
+        <ul class="modes" role="list">
+          {
+            ['高鐵', '臺鐵', '開車', '接駁車'].map((mode) => (
+              <li class="modes__row">
+                <span class="modes__name">{mode}</span>
+                <span class="modes__detail">
+                  路線說明 <Stamp label="待公布" tilt={false} />
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <Button href="/venue/" variant="line" icon="arrow-right">會場與交通</Button>
+      </div>
+    </div>
+  </section>
+
+  <section class="partners wrap" aria-labelledby="partners-title">
+    <h2 class="section-title" id="partners-title">指導與贊助</h2>
+    <dl class="partners__list">
+      <div class="partners__row">
+        <dt>指導單位</dt>
+        <dd><span class="plate">{site.advisor}</span></dd>
+      </div>
+      <div class="partners__row">
+        <dt>主辦單位</dt>
+        <dd>
+          {site.organizers ? site.organizers.join('、') : <Stamp label="待確認" tilt={false} />}
+        </dd>
+      </div>
+      <div class="partners__row">
+        <dt>贊助夥伴</dt>
+        <dd><Stamp label="招募中" tilt={false} /></dd>
+      </div>
+    </dl>
+    <div class="partners__cta">
+      <p>想一起支持學生辦的量子年會？贊助方案正在整理。</p>
+      <Button href="/sponsors/" variant="line" icon="arrow-right">贊助方案</Button>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  
+  .hero {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    min-height: calc(100svh - 4rem - var(--rule-heavy));
+    overflow: hidden;
+  }
+
+  .hero__content {
+    position: relative;
+    z-index: var(--z-content);
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: var(--space-5);
+    align-content: center;
+    padding-block: var(--space-6) var(--space-5);
+  }
+
+  .hero__title {
+    grid-column: 1 / span 8;
+    font-weight: var(--weight-black);
+  }
+
+  .hero__title :global(.hero__wordmark) {
+    width: 100%;
+    height: auto;
+  }
+
+  .hero__name {
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-black);
+    letter-spacing: 0.04em;
+    line-height: var(--leading-tight);
+  }
+
+  .hero__copy {
+    grid-column: 1 / span 6;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .hero__en {
+    margin-top: var(--space-3);
+  }
+
+  .hero__en {
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign);
+    font-size: var(--text-md);
+    letter-spacing: 0.08em;
+  }
+
+  .hero :global(.hero__ticket) {
+    grid-column: 7 / span 6;
+    grid-row: 2;
+    width: min(100%, 36rem);
+    justify-self: end;
+    align-self: start;
+  }
+
+  
+  .tk-issuer {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: var(--rule-hair) solid var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+  }
+
+  .tk-serial {
+    display: inline-flex;
+    gap: var(--space-2);
+    color: var(--color-ink-soft);
+  }
+
+  .tk-serial b {
+    color: var(--color-ink);
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    letter-spacing: 0.06em;
+  }
+
+  .tk-station {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--space-3);
+    margin-block: var(--space-3);
+  }
+
+  .tk-station__org {
+    flex-basis: 100%;
+    font-size: var(--text-md);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.2em;
+  }
+
+  .tk-station__name {
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-black);
+    letter-spacing: 0.12em;
+    line-height: 1.05;
+  }
+
+  .tk-station__city {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+  }
+
+  .tk-rows {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    gap: var(--space-2) var(--space-6);
+    padding-block: var(--space-3);
+    border-block: var(--rule-hair) solid var(--color-ink);
+  }
+
+  .tk-rows dt {
+    color: var(--color-ink-soft);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+  }
+
+  .tk-rows dd {
+    margin: 0;
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-size: var(--text-xl);
+    line-height: var(--leading-snug);
+    letter-spacing: 0.04em;
+  }
+
+  .tk-weekday {
+    font-family: var(--font-sans);
+    font-size: 0.7em;
+  }
+
+  .tk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-4);
+    min-height: 3rem;
+    margin-top: var(--space-4);
+    padding-inline-end: var(--slit-zone);
+  }
+
+  
+  .section-title {
+    font-size: var(--text-3xl);
+    letter-spacing: 0.02em;
+  }
+
+  .about,
+  .venue,
+  .partners {
+    padding-top: var(--space-10);
+  }
+
+  
+  .about {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: var(--space-7);
+  }
+
+  .about__text {
+    grid-column: 1 / span 7;
+    max-width: var(--measure);
+  }
+
+  .about__text > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .about__text .section-title {
+    margin-bottom: var(--space-5);
+  }
+
+  .about__text p {
+    font-size: var(--text-md);
+  }
+
+  .about__theme {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding-block: var(--space-4);
+  }
+
+  .about__theme-label {
+    font-weight: var(--weight-bold);
+  }
+
+  .about__text :global(.btn) {
+    margin-top: var(--space-5);
+  }
+
+  
+  .departures {
+    margin-top: var(--space-10);
+    background: var(--color-ink);
+    color: var(--color-white);
+    --color-focus: var(--color-white);
+  }
+
+  .departures__inner {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: var(--space-6);
+    padding-block: var(--space-9);
+  }
+
+  .departures__head {
+    grid-column: 1 / span 4;
+  }
+
+  .departures__head p {
+    margin-top: var(--space-5);
+    color: var(--color-on-ink-soft);
+    font-size: var(--text-md);
+  }
+
+  .board {
+    grid-column: 5 / span 8;
+    --flap-bg: var(--color-ink-raised);
+  }
+
+  .board__table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .board__table thead th {
+    padding: 0 var(--space-3) var(--space-3);
+    border-bottom: var(--rule-heavy) solid var(--color-white);
+    color: var(--color-on-ink-soft);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.2em;
+    text-align: left;
+  }
+
+  .board__table tbody tr {
+    border-bottom: var(--rule-hair) solid var(--color-on-ink-rule);
+  }
+
+  .board__table td,
+  .board__table tbody th {
+    padding: var(--space-3);
+    vertical-align: middle;
+    text-align: left;
+  }
+
+  .board__time {
+    width: 1%;
+    white-space: nowrap;
+  }
+
+  .board__item {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+  }
+
+  .board__place {
+    color: var(--color-on-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  .board__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-top: var(--space-6);
+    color: var(--color-on-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  .board__foot p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .board__foot :global(.stamp) {
+    color: var(--color-white);
+  }
+
+  .board :global(.board__cta) {
+    border-color: var(--color-white);
+    color: var(--color-white);
+  }
+
+  .board :global(.board__cta:hover) {
+    background: var(--color-white);
+    color: var(--color-ink);
+  }
+
+  
+  .venue__grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: var(--space-6);
+    margin-top: var(--space-6);
+  }
+
+  .venue :global(.venue__sign) {
+    grid-column: 1 / span 6;
+    align-self: start;
+  }
+
+  .venue__modes {
+    grid-column: 8 / span 5;
+  }
+
+  .modes {
+    margin: 0;
+    border-top: var(--rule-heavy) solid var(--color-ink);
+  }
+
+  .modes__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block: var(--space-4);
+    border-bottom: var(--rule-hair) solid var(--color-ink);
+  }
+
+  .modes__name {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-black);
+  }
+
+  .modes__detail {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  
+  .partners__list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-5) var(--gutter);
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: var(--rule-heavy) solid var(--color-ink);
+  }
+
+  .partners__row dt {
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  .partners__row dd {
+    margin: var(--space-2) 0 0;
+  }
+
+  .plate {
+    display: inline-block;
+    padding: var(--space-2) var(--space-4);
+    border: var(--rule-mid) solid var(--color-ink);
+    border-radius: var(--radius-chip);
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-size: var(--text-xl);
+    letter-spacing: 0.03em;
+  }
+
+  .partners__cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-top: var(--space-7);
+    padding-top: var(--space-5);
+    border-top: var(--rule-hair) solid var(--color-ink);
+  }
+
+  
+  @media (max-width: 71.99rem) {
+    .hero__title {
+      grid-column: 1 / span 9;
+    }
+
+    .hero__copy {
+      grid-column: 1 / span 6;
+    }
+
+    .hero__name {
+      font-size: var(--text-2xl);
+    }
+
+    .hero :global(.hero__ticket) {
+      grid-column: 7 / -1;
+    }
+
+    .about__text {
+      grid-column: 1 / span 7;
+    }
+
+    .departures__head,
+    .board {
+      grid-column: 1 / -1;
+    }
+
+    .departures__head p {
+      max-width: var(--measure);
+    }
+  }
+
+  @media (max-width: 47.99rem) {
+    .hero__content {
+      row-gap: var(--space-4);
+      padding-block: var(--space-5) var(--space-5);
+      align-content: start;
+    }
+
+    .hero__title {
+      grid-column: 1 / -1;
+    }
+
+    .hero__copy,
+    .hero :global(.hero__ticket) {
+      grid-column: 1 / -1;
+      grid-row: auto;
+    }
+
+    .hero :global(.hero__ticket) {
+      width: 100%;
+    }
+
+    .hero__en {
+      margin-top: var(--space-1);
+      font-size: var(--text-sm);
+    }
+
+    .tk-station__name {
+      font-size: var(--text-2xl);
+    }
+
+    .tk-rows {
+      column-gap: var(--space-4);
+    }
+
+    .tk-rows dd {
+      font-size: var(--text-md);
+    }
+
+    .about__text,
+    .venue :global(.venue__sign),
+    .venue__modes {
+      grid-column: 1 / -1;
+    }
+
+    .partners__list {
+      grid-template-columns: 1fr;
+    }
+
+    .board__table td,
+    .board__table tbody th {
+      padding: var(--space-3) var(--space-2);
+    }
+
+    .board__table td:first-child {
+      padding-inline-start: 0;
+    }
+
+    .board__item {
+      font-size: var(--text-md);
+    }
+
+    .board :global(.flap) {
+      font-size: var(--text-base);
+    }
+  }
+</style>
+

@@ -1,0 +1,68 @@
+---
+import Stamp from './Stamp.astro';
+import { site } from '../data/site';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class:list={['station-sign', className]}>
+  <p class="station-sign__org">{site.venue.org}</p>
+  <p class="station-sign__name">{site.venue.name}</p>
+  <p class="station-sign__bar">
+    <span>{site.venue.city}</span>
+    <span class="station-sign__addr">
+      地址 {site.venue.address ?? <Stamp label="待確認" tilt={false} />}
+    </span>
+  </p>
+</div>
+
+<style>
+  .station-sign {
+    display: grid;
+    background: var(--color-white);
+    border: var(--rule-heavy) solid var(--color-ink);
+    border-radius: var(--radius-chip);
+    overflow: hidden;
+  }
+
+  .station-sign__org {
+    padding: var(--space-5) var(--space-6) 0;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.3em;
+  }
+
+  .station-sign__name {
+    padding: 0 var(--space-6) var(--space-5);
+    font-size: var(--text-display);
+    font-weight: var(--weight-black);
+    letter-spacing: 0.14em;
+    line-height: 1.1;
+  }
+
+  .station-sign__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-5);
+    padding: var(--space-3) var(--space-6);
+    background: var(--color-ink);
+    color: var(--color-white);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-lg);
+  }
+
+  .station-sign__addr {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-regular);
+  }
+</style>
+

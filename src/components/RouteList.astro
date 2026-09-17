@@ -1,0 +1,82 @@
+---
+
+interface Props {
+  items: string[];
+  labelledby?: string;
+  class?: string;
+}
+
+const { items, labelledby, class: className } = Astro.props;
+---
+
+<ol class:list={['route-list', className]} role="list" aria-labelledby={labelledby}>
+  {
+    items.map((item) => (
+      <li class="route-list__stop">
+        <span class="route-list__dot" aria-hidden="true" />
+        <span class="route-list__label">{item}</span>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .route-list {
+    --dot: 1.125rem;
+    position: relative;
+    margin: 0;
+    padding: 0;
+  }
+
+  .route-list::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--dot) / 2);
+    top: calc(var(--space-3) + var(--dot) / 2);
+    bottom: calc(var(--space-3) + var(--dot) / 2);
+    width: var(--rule-heavy);
+    translate: -50% 0;
+    background: var(--color-ink);
+  }
+
+  .route-list__stop {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding-block: var(--space-3);
+  }
+
+  .route-list__stop + .route-list__stop {
+    border-top: var(--rule-hair) solid var(--color-rule-fine);
+    margin-left: calc(var(--dot) + var(--space-4));
+    padding-left: 0;
+  }
+
+  .route-list__stop + .route-list__stop .route-list__dot {
+    margin-left: calc((var(--dot) + var(--space-4)) * -1);
+  }
+
+  .route-list__dot {
+    flex: none;
+    width: var(--dot);
+    height: var(--dot);
+    margin-top: 0.3em;
+    border: var(--rule-heavy) solid var(--color-ink);
+    border-radius: 50%;
+    background: var(--color-white);
+  }
+
+  .route-list__stop:first-child .route-list__dot,
+  .route-list__stop:last-child .route-list__dot {
+    border-radius: var(--radius-tile);
+    background: var(--color-ink);
+  }
+
+  .route-list__label {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-snug);
+  }
+</style>
+

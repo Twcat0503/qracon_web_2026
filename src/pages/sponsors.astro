@@ -1,0 +1,116 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import RowTable from '../components/RowTable.astro';
+import Stamp from '../components/Stamp.astro';
+import { site } from '../data/site';
+---
+
+<BaseLayout title="贊助" description="支持 QRACON 2026 學生量子電腦年會：贊助方案與聯絡方式。">
+  <PageHead
+    title="贊助"
+    status="招募中"
+    lede="QRACON 是學生辦的年會。贊助讓我們能把量子帶到更多中學生與大學生面前，也讓業界的量子故事被下一代聽見。贊助方案與級距正在整理。"
+  />
+
+  <div class="wrap sponsors-page">
+    <section class="sponsors-page__current" aria-labelledby="current-title">
+      <h2 id="current-title">目前的夥伴</h2>
+      <dl class="partner-plates">
+        <div>
+          <dt>指導單位</dt>
+          <dd><span class="plate">{site.advisor}</span></dd>
+        </div>
+        <div>
+          <dt>贊助夥伴</dt>
+          <dd class="partner-plates__empty">
+            <Stamp label="招募中" size="md" tilt={false} />
+            <span>這裡保留給和我們一起把量子帶到南部的你。</span>
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="sponsors-page__plan" aria-labelledby="plan-title">
+      <h2 class="visually-hidden" id="plan-title">贊助方案</h2>
+      <RowTable
+        caption="贊助方案"
+        rows={[
+          { label: '級距與權益', value: null },
+          { label: '攤位與展示', value: null },
+          { label: '廠商閃電講', value: null },
+          { label: '聯絡窗口', value: site.contactEmail },
+        ]}
+      />
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .sponsors-page {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: var(--space-8);
+  }
+
+  .sponsors-page h2 {
+    margin-bottom: var(--space-5);
+    font-size: var(--text-2xl);
+  }
+
+  .sponsors-page__current {
+    grid-column: 1 / span 5;
+  }
+
+  .sponsors-page__plan {
+    grid-column: 7 / span 6;
+  }
+
+  .partner-plates {
+    display: grid;
+    gap: var(--space-6);
+    margin: 0;
+    padding-top: var(--space-5);
+    border-top: var(--rule-heavy) solid var(--color-ink);
+  }
+
+  .partner-plates dt {
+    margin-bottom: var(--space-2);
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  .partner-plates dd {
+    margin: 0;
+  }
+
+  .plate {
+    display: inline-block;
+    padding: var(--space-3) var(--space-5);
+    border: var(--rule-mid) solid var(--color-ink);
+    border-radius: var(--radius-chip);
+    background: var(--color-white);
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    font-size: var(--text-2xl);
+    letter-spacing: 0.03em;
+  }
+
+  .partner-plates__empty {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: var(--rule-mid) dashed var(--color-ink);
+    border-radius: var(--radius-chip);
+    color: var(--color-ink-soft);
+  }
+
+  @media (max-width: 71.99rem) {
+    .sponsors-page__current,
+    .sponsors-page__plan {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

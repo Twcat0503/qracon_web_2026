@@ -1,0 +1,136 @@
+---
+
+interface Props {
+  id: string;
+  title: string;
+  variant?: 'mini' | 'full';
+}
+
+const { id, title, variant = 'mini' } = Astro.props;
+---
+
+<button
+  type="button"
+  class:list={['punch', `punch--${variant}`]}
+  data-punch={id}
+  aria-pressed="false"
+  hidden
+>
+  <span class="punch__hole" aria-hidden="true"></span>
+  {
+    variant === 'full' ? (
+      <span class="punch__label">收藏這場</span>
+    ) : (
+      <span class="visually-hidden">收藏「{title}」</span>
+    )
+  }
+</button>
+
+<style>
+  .punch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
+
+  .punch[hidden] {
+    display: none;
+  }
+
+  
+  .punch--mini {
+    width: var(--punch-size, 2.75rem);
+    height: var(--punch-size, 2.75rem);
+    border-radius: 50%;
+  }
+
+  .punch--full {
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
+    border: var(--rule-mid) solid var(--color-ink);
+    border-radius: var(--radius-chip);
+    font-weight: var(--weight-bold);
+  }
+
+  .punch__hole {
+    position: relative;
+    width: 0.9375rem;
+    height: 0.9375rem;
+    flex: none;
+    border: var(--rule-mid) dashed currentColor;
+    border-radius: 50%;
+    transition: background-color var(--dur-fast) var(--ease-out);
+  }
+
+  
+  .punch__hole::after {
+    content: "";
+    position: absolute;
+    inset: calc(var(--rule-mid) * -1);
+    border: var(--rule-mid) dashed currentColor;
+    border-radius: 50%;
+    background: var(--chad-bg, var(--color-white));
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .punch:hover .punch__hole {
+    border-style: solid;
+  }
+
+  .punch[aria-pressed="true"] .punch__hole {
+    border-style: solid;
+    background: currentColor;
+  }
+
+  .punch--full {
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out);
+  }
+
+  .punch--full[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-white);
+    --chad-bg: var(--color-ink);
+  }
+
+  
+  @media (prefers-reduced-motion: no-preference) {
+    .punch[aria-pressed="true"] .punch__hole {
+      scale: 1.1;
+    }
+
+    .punch.is-punching .punch__hole {
+      animation: punch-land var(--dur-base) var(--ease-out);
+    }
+
+    .punch.is-punching .punch__hole::after {
+      animation: chad-fall var(--dur-fall) var(--ease-flap) forwards;
+    }
+
+    @keyframes punch-land {
+      from {
+        scale: 0.6;
+      }
+    }
+
+    @keyframes chad-fall {
+      0% {
+        opacity: 1;
+        translate: 0 0;
+        rotate: 0deg;
+      }
+      100% {
+        opacity: 0;
+        translate: 0.25rem 1.25rem;
+        rotate: 70deg;
+      }
+    }
+  }
+</style>

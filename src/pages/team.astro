@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import Stamp from '../components/Stamp.astro';
+---
+
+<BaseLayout title="籌備團隊" description="QRACON 2026 籌備團隊名單。">
+  <PageHead
+    title="籌備團隊"
+    status="待公布"
+  />
+
+  <div class="wrap team-page">
+    <div class="crew-frame">
+      <Stamp label="名單待公布" size="md" />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .crew-frame {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-4);
+    max-width: 44rem;
+    padding: var(--space-7) var(--space-6);
+    border: var(--rule-mid) dashed var(--color-ink);
+    border-radius: var(--radius-chip);
+    background: var(--color-white);
+  }
+</style>
