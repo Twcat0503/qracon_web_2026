@@ -1,10 +1,10 @@
-
 import { initPunches } from './punches';
 import { setFlap } from './flap';
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const token = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const token = (name: string) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const ms = (name: string) => parseFloat(token(name)) || 0;
 
 const EVENT_DATE = '2026-12-05';
@@ -141,6 +141,72 @@ function initNow(sessions: HTMLElement[]) {
   if (currentMinutes() && !currentMinutes()?.preview) window.setInterval(render, 60_000);
 }
 
+function initMobileControls() {
+  const controls = document.querySelector<HTMLElement>('[data-agenda-controls]');
+  const agenda = document.querySelector<HTMLElement>('.agenda');
+  const toggle = controls?.querySelector<HTMLButtonElement>('[data-filter-toggle]');
+  const jump = controls?.querySelector<HTMLSelectElement>('[data-phase-jump]');
+  if (!controls || !agenda || !toggle || !jump) return;
+  const mobile = window.matchMedia('(max-width: 71.99rem)');
+  const phases = [...document.querySelectorAll<HTMLElement>('[data-phase-start]')];
+  const setExpanded = (open: boolean) => {
+    controls.toggleAttribute('data-filters-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  };
+  const measure = () => {
+    const height = mobile.matches ? controls.getBoundingClientRect().height : 0;
+    agenda.style.setProperty('--agenda-controls-height', `${height}px`);
+  };
+  new ResizeObserver(measure).observe(controls);
+  mobile.addEventListener('change', measure);
+  measure();
+  toggle.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    setExpanded(open);
+  });
+  controls.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !controls.hasAttribute('data-filters-open')) return;
+    setExpanded(false);
+    toggle.focus({ preventScroll: true });
+  });
+  jump.addEventListener('change', () => {
+    const phase = document.getElementById(jump.value);
+    if (!phase || phase.hasAttribute('data-empty')) return;
+    setExpanded(false);
+    measure();
+    const top =
+      window.scrollY +
+      phase.getBoundingClientRect().top -
+      controls.getBoundingClientRect().height -
+      16;
+    window.scrollTo({ top, behavior: reducedMotion() ? 'instant' : 'smooth' });
+    const url = new URL(window.location.href);
+    url.hash = phase.id;
+    history.replaceState(null, '', url);
+  });
+  let pending = false;
+  const updatePhase = () => {
+    pending = false;
+    if (!mobile.matches) return;
+    const edge = controls.getBoundingClientRect().height + 24;
+    const visible = phases.filter((phase) => !phase.hasAttribute('data-empty'));
+    const active = visible.findLast((phase) => phase.getBoundingClientRect().top <= edge);
+    jump.value = active?.id ?? '';
+  };
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!pending) {
+        pending = true;
+        requestAnimationFrame(updatePhase);
+      }
+    },
+    { passive: true },
+  );
+  document.addEventListener('agenda:filters-changed', updatePhase);
+  updatePhase();
+}
+
 function initFilters(sessions: HTMLElement[]) {
   const tools = document.querySelector<HTMLElement>('[data-tt-tools]');
   if (!tools) return;
@@ -155,7 +221,9 @@ function initFilters(sessions: HTMLElement[]) {
 
   const apply = () => {
     const types = new Set(
-      typeButtons.filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.dataset.filterType),
+      typeButtons
+        .filter((b) => b.getAttribute('aria-pressed') === 'true')
+        .map((b) => b.dataset.filterType),
     );
     const onlyPunched = punchedButton?.getAttribute('aria-pressed') === 'true';
     let shown = 0;
@@ -172,8 +240,49 @@ function initFilters(sessions: HTMLElement[]) {
     }
 
     const filtering = types.size > 0 || onlyPunched;
+    for (const group of document.querySelectorAll<HTMLElement>('[data-group-time]')) {
+      const time = Number(group.dataset.groupTime);
+      group.toggleAttribute(
+        'data-empty',
+        !sessions.some(
+          (session) => !session.hasAttribute('data-dim') && Number(session.dataset.start) === time,
+        ),
+      );
+    }
+    let firstVisiblePhase = true;
+    for (const phase of document.querySelectorAll<HTMLElement>('[data-phase-start]')) {
+      const from = Number(phase.dataset.phaseStart);
+      const to = Number(phase.dataset.phaseEnd);
+      const empty = !sessions.some(
+        (session) =>
+          !session.hasAttribute('data-dim') &&
+          Number(session.dataset.start) >= from &&
+          Number(session.dataset.start) < to,
+      );
+      phase.toggleAttribute('data-empty', empty);
+      phase.toggleAttribute('data-first-phase', !empty && firstVisiblePhase);
+      if (!empty) firstVisiblePhase = false;
+      const option = document.querySelector<HTMLOptionElement>(
+        `[data-phase-jump] option[value="${phase.id}"]`,
+      );
+      if (option) option.disabled = empty;
+    }
+    const empty = document.querySelector<HTMLElement>('[data-tt-empty]');
+    if (empty) empty.hidden = shown > 0;
+    const summary = tools
+      .closest('[data-agenda-controls]')
+      ?.querySelector<HTMLElement>('[data-filter-summary]');
+    if (summary)
+      summary.textContent =
+        [types.size ? `${types.size} 類型` : '', onlyPunched ? '已收藏' : '']
+          .filter(Boolean)
+          .join('・') || '全部';
+    document.dispatchEvent(new Event('agenda:filters-changed'));
     if (clearButton) clearButton.hidden = !filtering;
-    if (countEl) countEl.textContent = filtering ? `符合條件的場次：${shown}／${listed}` : `共 ${listed} 個場次`;
+    if (countEl)
+      countEl.textContent = filtering
+        ? `符合條件的場次：${shown}／${listed}`
+        : `共 ${listed} 個場次`;
   };
 
   for (const button of typeButtons) {
@@ -184,16 +293,29 @@ function initFilters(sessions: HTMLElement[]) {
   }
 
   punchedButton?.addEventListener('click', () => {
-    punchedButton.setAttribute('aria-pressed', String(punchedButton.getAttribute('aria-pressed') !== 'true'));
+    punchedButton.setAttribute(
+      'aria-pressed',
+      String(punchedButton.getAttribute('aria-pressed') !== 'true'),
+    );
     apply();
   });
 
-  clearButton?.addEventListener('click', () => {
+  const clear = () => {
     typeButtons.forEach((b) => b.setAttribute('aria-pressed', 'false'));
     punchedButton?.setAttribute('aria-pressed', 'false');
     apply();
-    typeButtons[0]?.focus();
-  });
+    const controls = tools.closest('[data-agenda-controls]');
+    const mobileCollapsed =
+      window.matchMedia('(max-width: 71.99rem)').matches &&
+      !controls?.hasAttribute('data-filters-open');
+    if (mobileCollapsed)
+      controls
+        ?.querySelector<HTMLButtonElement>('[data-filter-toggle]')
+        ?.focus({ preventScroll: true });
+    else typeButtons[0]?.focus({ preventScroll: true });
+  };
+  clearButton?.addEventListener('click', clear);
+  document.querySelector('[data-filter-reset]')?.addEventListener('click', clear);
 
   initPunches((set) => {
     punched = set;
@@ -275,7 +397,9 @@ function initPhaseArrival() {
     band.classList.remove('is-arriving');
     void band.offsetWidth;
     band.classList.add('is-arriving');
-    band.addEventListener('animationend', () => band.classList.remove('is-arriving'), { once: true });
+    band.addEventListener('animationend', () => band.classList.remove('is-arriving'), {
+      once: true,
+    });
   };
 
   const afterScroll = (hash: string) => {
@@ -293,50 +417,6 @@ function initPhaseArrival() {
   if (window.location.hash) arrive(window.location.hash);
 }
 
-const VT_NAME = 'vt-session';
-const VT_KEY = 'qracon2026:vt-session';
-
-function idFromUrl(url: string | undefined | null): string | null {
-  if (!url) return null;
-  const match = new URL(url, window.location.href).pathname.match(/^\/agenda\/([^/]+)\/?$/);
-  return match?.[1] ?? null;
-}
-
-function inView(el: Element) {
-  const r = el.getBoundingClientRect();
-  return r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
-}
-
-function remember(id: string | null) {
-  try {
-    if (id) sessionStorage.setItem(VT_KEY, id);
-    else sessionStorage.removeItem(VT_KEY);
-  } catch {
-  }
-}
-
-function initSessionMorph(sessions: HTMLElement[]) {
-  let clicked: string | null = null;
-
-  document.addEventListener('click', (e) => {
-    const link = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>('a[href]') : null;
-    clicked = link ? idFromUrl(link.href) : null;
-  });
-
-  window.addEventListener('pageswap', (event) => {
-    sessions.forEach((el) => el.style.removeProperty('view-transition-name'));
-    if (!event.viewTransition) return;
-    const id = idFromUrl(event.activation?.entry?.url) ?? clicked;
-    const cell = id ? sessions.find((el) => el.dataset.id === id) : undefined;
-    if (!cell || !inView(cell)) {
-      remember(null);
-      return;
-    }
-    cell.style.setProperty('view-transition-name', VT_NAME);
-    remember(id);
-  });
-}
-
 export function initAgenda() {
   const sessions = [...document.querySelectorAll<HTMLElement>('[data-session]')];
   if (!sessions.length) return;
@@ -344,6 +424,5 @@ export function initAgenda() {
   initNow(sessions);
   initCrosshair();
   initPhaseArrival();
-  initSessionMorph(sessions);
+  initMobileControls();
 }
-

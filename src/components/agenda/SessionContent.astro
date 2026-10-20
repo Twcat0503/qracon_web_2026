@@ -1,0 +1,139 @@
+---
+import type { Session } from '../../types/agenda';
+import { typeLabels, canBookmark } from '../../data/sessions';
+import { roomById } from '../../data/rooms';
+import { site } from '../../data/site';
+import { hhmm, durationLabel } from '../../utils/time';
+import PunchToggle from './PunchToggle.astro';
+import Stamp from '../Stamp.astro';
+
+interface Props {
+  session: Session;
+  titleId: string;
+  headingLevel?: 1 | 2;
+}
+
+const { session, titleId, headingLevel = 2 } = Astro.props;
+const Heading = headingLevel === 1 ? 'h1' : 'h2';
+const SectionHeading = headingLevel === 1 ? 'h2' : 'h3';
+const roomNames =
+  session.rooms === 'all' ? '全體' : session.rooms.map((id) => roomById(id).name).join('、');
+---
+
+<article class="session-content" data-session-content={session.id} aria-labelledby={titleId}>
+  <p class="session-content__type">
+    <span>{typeLabels[session.type]}</span>
+    <Stamp label="草案" tilt={false} />
+  </p>
+  <Heading class="session-content__title" id={titleId}>
+    {session.title}
+  </Heading>
+  <dl class="session-content__facts">
+    <div>
+      <dt>日期</dt>
+      <dd>
+        <time datetime={site.date}>{site.dateLabel}</time>（{site.weekday}）
+      </dd>
+    </div>
+    <div>
+      <dt>時間</dt>
+      <dd>
+        <time datetime={session.start}>{hhmm(session.start)}</time> –{' '}
+        <time datetime={session.end}>{hhmm(session.end)}</time>
+        <small>{durationLabel(session.start, session.end)}</small>
+      </dd>
+    </div>
+    <div>
+      <dt>場地</dt>
+      <dd>{roomNames}</dd>
+    </div>
+  </dl>
+  <div class="session-content__body">
+    <section>
+      <SectionHeading>講者</SectionHeading>
+      <Stamp label="待公布" tilt={false} />
+    </section>
+    <section>
+      <SectionHeading>摘要</SectionHeading>
+      {session.abstract ? <p>{session.abstract}</p> : <Stamp label="待公布" tilt={false} />}
+    </section>
+    {session.note && (
+      <section>
+        <SectionHeading>草案備註</SectionHeading>
+        <p>{session.note}</p>
+      </section>
+    )}
+  </div>
+  {canBookmark(session) && (
+    <div class="session-content__actions">
+      <PunchToggle id={session.id} title={session.title} variant="full" />
+    </div>
+  )}
+</article>
+
+<style>
+  .session-content {
+    padding: var(--space-6);
+  }
+  .session-content__type {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-ink-soft);
+  }
+  .session-content__title {
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    line-height: 1.4;
+  }
+  .session-content__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    padding-block: var(--space-5);
+    margin-top: var(--space-5);
+    border-block: var(--rule-hair) solid var(--color-ink);
+  }
+  .session-content__facts > div:last-child {
+    grid-column: 1 / -1;
+  }
+  .session-content dt {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--color-ink-soft);
+  }
+  .session-content dd {
+    margin: 0;
+    font-weight: var(--weight-bold);
+  }
+  .session-content small {
+    display: block;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-regular);
+    color: var(--color-ink-soft);
+  }
+  .session-content__body {
+    display: grid;
+    gap: var(--space-5);
+    padding-block: var(--space-5);
+  }
+  .session-content__body :is(h2, h3) {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-base);
+  }
+  .session-content__actions {
+    padding-top: 1.25rem;
+    border-top: var(--rule-hair) solid var(--color-rule-fine);
+  }
+  @media (max-width: 47.99rem) {
+    .session-content {
+      padding: 1.25rem;
+    }
+    .session-content__facts {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

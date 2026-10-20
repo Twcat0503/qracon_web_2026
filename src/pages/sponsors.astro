@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHead from '../components/PageHead.astro';
 import RowTable from '../components/RowTable.astro';
-import Stamp from '../components/Stamp.astro';
+import EmptyState from '../components/EmptyState.astro';
 import { site } from '../data/site';
 ---
 
@@ -19,20 +19,23 @@ import { site } from '../data/site';
       <dl class="partner-plates">
         <div>
           <dt>指導單位</dt>
-          <dd><span class="plate">{site.advisor}</span></dd>
+          <dd>
+            <span class="plate">{site.advisor}</span>
+          </dd>
         </div>
         <div>
           <dt>贊助夥伴</dt>
-          <dd class="partner-plates__empty">
-            <Stamp label="招募中" size="md" tilt={false} />
-            <span>這裡保留給和我們一起把量子帶到南部的你。</span>
+          <dd>
+            <EmptyState label="招募中" note="這裡保留給和我們一起把量子帶到南部的你。" />
           </dd>
         </div>
       </dl>
     </section>
 
     <section class="sponsors-page__plan" aria-labelledby="plan-title">
-      <h2 class="visually-hidden" id="plan-title">贊助方案</h2>
+      <h2 class="visually-hidden" id="plan-title">
+        贊助方案
+      </h2>
       <RowTable
         caption="贊助方案"
         rows={[
@@ -95,16 +98,6 @@ import { site } from '../data/site';
     font-weight: var(--weight-sign-heavy);
     font-size: var(--text-2xl);
     letter-spacing: 0.03em;
-  }
-
-  .partner-plates__empty {
-    display: grid;
-    justify-items: start;
-    gap: var(--space-3);
-    padding: var(--space-5);
-    border: var(--rule-mid) dashed var(--color-ink);
-    border-radius: var(--radius-chip);
-    color: var(--color-ink-soft);
   }
 
   @media (max-width: 71.99rem) {
