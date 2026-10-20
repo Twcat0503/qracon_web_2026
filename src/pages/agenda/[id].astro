@@ -6,7 +6,7 @@ import Stamp from '../../components/Stamp.astro';
 import Icon from '../../components/Icon.astro';
 import PunchToggle from '../../components/agenda/PunchToggle.astro';
 import Words from '../../components/Words.astro';
-import { sessions, typeLabels, isListed } from '../../data/sessions';
+import { sessions, typeLabels, isListed, canBookmark } from '../../data/sessions';
 import { roomById } from '../../data/rooms';
 import { site } from '../../data/site';
 import { durationLabel, hhmm, minutesOf } from '../../utils/time';
@@ -68,9 +68,9 @@ const next = index >= 0 && index < sameRoom.length - 1 ? sameRoom[index + 1] : u
           <dd class="dt-cjk">{roomNames.join('、')}</dd>
         </div>
       </dl>
-      <div class="dt-actions">
+      {canBookmark(session) && <div class="dt-actions">
         <PunchToggle id={session.id} title={session.title} variant="full" />
-      </div>
+      </div>}
     </Ticket>
 
     <div class="detail__body">

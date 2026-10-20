@@ -16,6 +16,10 @@ const { label = '待公布', size = 'sm', tilt = true, class: className } = Astr
   .stamp {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    justify-self: start;
+    width: fit-content;
+    max-width: 100%;
     padding: 0.05em 0.55em 0.1em;
     border: var(--rule-mid) solid currentColor;
     border-radius: var(--radius-chip);
@@ -25,7 +29,7 @@ const { label = '待公布', size = 'sm', tilt = true, class: className } = Astr
     letter-spacing: 0.14em;
     line-height: var(--leading-snug);
     white-space: nowrap;
-    vertical-align: 0.1em;
+    vertical-align: middle;
   }
 
   .stamp--md {

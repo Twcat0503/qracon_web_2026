@@ -155,7 +155,12 @@ const path = Astro.url.pathname;
   }
 
   .route__label {
-    padding: 0 0.4em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.65rem;
+    padding: 0.15rem 0.6rem 0.2rem;
+    line-height: 1.2;
     border-radius: var(--radius-tile);
   }
 
@@ -327,6 +332,13 @@ const path = Astro.url.pathname;
       display: none;
     }
   }
+
+  @media (min-width: 72rem) {
+    .route__line { --stop: 5.75rem; }
+    .route__stop a { width: 100%; }
+    .route__label { width: calc(var(--stop) - 0.75rem); padding-inline: 0.25rem; text-align: center; }
+  }
+
 </style>
 
 <script>

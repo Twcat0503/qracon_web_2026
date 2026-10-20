@@ -220,10 +220,13 @@ function initCrosshair() {
   const heads = [...table.querySelectorAll<HTMLElement>('.tt__room')];
   const marks = [...table.querySelectorAll<HTMLElement>('.tt__mark')];
   let current: HTMLElement | null = null;
+  let pointerSuspended = false;
 
   const set = (cell: HTMLElement | null) => {
     if (cell === current) return;
+    current?.removeAttribute('data-hot');
     current = cell;
+    current?.setAttribute('data-hot', '');
     const c0 = Number(cell?.dataset.c0);
     const c1 = Number(cell?.dataset.c1);
     const r0 = Number(cell?.dataset.r0);
@@ -241,11 +244,26 @@ function initCrosshair() {
   const cellOf = (target: EventTarget | null) =>
     target instanceof Element ? target.closest<HTMLElement>('[data-session]') : null;
 
-  table.addEventListener('pointerover', (e) => set(cellOf(e.target)));
+  document.addEventListener('agenda:reset-highlight', () => {
+    set(null);
+    pointerSuspended = true;
+  });
+  table.addEventListener('pointerover', (e) => {
+    if (!pointerSuspended) set(cellOf(e.target));
+  });
+  table.addEventListener('pointermove', (e) => {
+    pointerSuspended = false;
+    set(cellOf(e.target));
+  });
   table.addEventListener('pointerleave', () => set(null));
-  table.addEventListener('focusin', (e) => set(cellOf(e.target)));
+  table.addEventListener('focusin', (e) => {
+    if (e.target instanceof HTMLElement && e.target.matches(':focus-visible')) {
+      pointerSuspended = false;
+      set(cellOf(e.target));
+    }
+  });
   table.addEventListener('focusout', (e) => {
-    if (!table.contains(e.relatedTarget as Node | null)) set(null);
+    set(cellOf(e.relatedTarget));
   });
 }
 

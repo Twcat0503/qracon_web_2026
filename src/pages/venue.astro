@@ -114,9 +114,9 @@ const modes = [
   .map-frame {
     display: grid;
     align-content: center;
-    justify-items: start;
+    justify-items: center;
     gap: var(--space-4);
-    min-height: 16rem;
+    min-height: 20rem;
     padding: var(--space-6);
     border: var(--rule-mid) dashed var(--color-ink);
     border-radius: var(--radius-chip);
@@ -195,5 +195,9 @@ const modes = [
       grid-column: 1 / -1;
     }
   }
+
+  .map-frame { place-content: center; text-align: center; }
+  .map-frame :global(.stamp) { justify-self: center; font-size: clamp(1.125rem, 1.6vw, 1.5rem); padding: 0.5em 0.9em; }
+
 </style>
 

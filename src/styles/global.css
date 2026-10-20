@@ -19,6 +19,7 @@ html {
   font-family: var(--font-sans);
   font-size: 100%;
   line-height: var(--leading-body);
+  scrollbar-gutter: stable;
   scrollbar-color: var(--color-ink) var(--color-paper);
   scroll-padding-top: var(--space-6);
 }

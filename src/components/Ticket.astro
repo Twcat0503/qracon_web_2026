@@ -48,10 +48,10 @@ const { slits = false, stamp, class: className, labelledby } = Astro.props;
   
   .ticket {
     --slit-w: 0.375rem;
-    --slit-h: 3rem;
-    --slit-gap: 2.25rem;
+    --slit-h: 1.25rem;
+    --slit-gap: 0.75rem;
     --slit-inset: 1.5rem;
-    --slit-bottom: 1.25rem;
+    --slit-bottom: 0.6rem;
     --slit-zone: calc(var(--slit-inset) + var(--slit-w) * 2 + var(--slit-gap) + var(--space-3));
     position: relative;
     background: var(--color-white);
@@ -104,8 +104,8 @@ const { slits = false, stamp, class: className, labelledby } = Astro.props;
 
   .ticket__datestamp {
     position: absolute;
-    right: var(--space-6);
-    top: 36%;
+    right: 1.75rem;
+    top: 5.9rem;
     padding: 0.1em 0.45em;
     border: var(--rule-mid) solid var(--color-ink-muted);
     border-radius: var(--radius-chip);
@@ -144,5 +144,16 @@ const { slits = false, stamp, class: className, labelledby } = Astro.props;
       display: none;
     }
   }
+
+  .ticket__frame { padding: 1.5rem; }
+  .ticket__datestamp { font-size: 0.75rem; letter-spacing: 0.06em; }
+  .ticket--slits .ticket__frame { padding-bottom: 2rem; }
+  @media (max-width: 71.99rem) { .ticket__datestamp { display: none; } }
+  @media (max-width: 34rem) { .ticket__frame { padding: 1rem; } }
+
+
+  .ticket { border: 1px solid var(--color-ink); border-radius: 8px; }
+  .ticket__frame { margin: 0; border: 0; border-radius: inherit; }
+
 </style>
 

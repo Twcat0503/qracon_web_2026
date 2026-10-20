@@ -20,7 +20,7 @@ import Stamp from '../components/Stamp.astro';
 <style>
   .crew-frame {
     display: grid;
-    justify-items: start;
+    justify-items: center;
     gap: var(--space-4);
     max-width: 44rem;
     padding: var(--space-7) var(--space-6);
@@ -28,4 +28,11 @@ import Stamp from '../components/Stamp.astro';
     border-radius: var(--radius-chip);
     background: var(--color-white);
   }
+
+  .crew-frame { min-height: 12rem; place-content: center; }
+  .crew-frame :global(.stamp) { justify-self: center; font-size: clamp(1.125rem, 1.8vw, 1.5rem); padding: 0.5em 0.9em; }
+
+
+  .crew-frame { width: 100%; margin-inline: auto; }
+
 </style>

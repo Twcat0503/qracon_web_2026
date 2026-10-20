@@ -1,6 +1,6 @@
 ---
 
-import { sessions, typeLabels, isListed, phases } from '../../data/sessions';
+import { sessions, typeLabels, isListed, canBookmark, phases } from '../../data/sessions';
 import { rooms, roomIndex, roomById } from '../../data/rooms';
 import { hhmm, minutesOf, toMinutes } from '../../utils/time';
 import type { Session } from '../../types/agenda';
@@ -111,7 +111,7 @@ const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
       const listed = isListed(s);
       return (
         <article
-          class:list={['s', `s--${s.type}`, { 's--all': s.rooms === 'all', 's--tall': tall(s), 's--short': short(s) }]}
+          class:list={['s', `s--${s.type}`, { 's--all': s.rooms === 'all', 's--checkin': s.id === 'check-in', 's--tall': tall(s), 's--short': short(s) }]}
           data-session
           data-id={s.id}
           data-type={s.type}
@@ -144,7 +144,7 @@ const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
             <span class="s__room">{roomLabel(s)}</span>
           </p>
           <p class="s__status" data-status hidden />
-          {listed && <PunchToggle id={s.id} title={s.title} />}
+          {canBookmark(s) && <PunchToggle id={s.id} title={s.title} />}
         </article>
       );
     })
@@ -250,8 +250,11 @@ const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
   }
 
   .s__title a:hover {
-    text-decoration: underline;
+    text-decoration: none;
   }
+
+  .s__title a:focus-visible { outline: none; }
+  .s:has(.s__title a:focus-visible) { outline: 3px solid var(--color-focus); outline-offset: -3px; }
 
   .s__meta {
     display: flex;
@@ -284,6 +287,8 @@ const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
     font-weight: var(--weight-black);
     letter-spacing: 0.1em;
   }
+
+  .s--checkin .s__meta { display: none; }
 
   .s--break {
     color: var(--color-ink-soft);
@@ -460,7 +465,8 @@ const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
       outline: var(--rule-thin) solid var(--color-ink);
       outline-offset: calc(var(--rule-thin) * -1);
       overflow: hidden;
-      transition: opacity var(--dur-base) var(--ease-out);
+      z-index: 1;
+      transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
     }
 
     .s :global(.punch) {
@@ -626,8 +632,16 @@ const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
     }
 
     .s[data-dim] {
-      opacity: 0.18;
+      color: #969696;
+      background-color: #f3f3f3;
+      background-image: none;
+      outline-color: #d0d0d0;
     }
+    .s[data-dim] .s__type,
+    .s[data-dim] .s__meta,
+    .s[data-dim] .s__meta time { color: #969696; }
+    .s[data-dim] :global(.punch) { opacity: 0.4; }
+    .s--all[data-dim] { background: #e3e3e3; color: #777; --chad-bg: #e3e3e3; }
 
     .s[data-state="now"] {
       margin: 0 0 var(--rule-hair) var(--rule-hair);
@@ -639,6 +653,94 @@ const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
 
     .s--all[data-state="now"] {
       padding-inline: var(--space-4);
+    }
+  }
+  .s[data-hot] {
+    background: var(--color-ink);
+    color: var(--color-white);
+    --color-focus: var(--color-white);
+    --chad-bg: var(--color-ink);
+  }
+  .s[data-hot] .s__meta, .s[data-hot] .s__type, .s[data-hot] .s__meta time { color: var(--color-on-ink-soft); }
+  @media (min-width: 72rem) {
+    .tt__rule { z-index: 0; }
+  .s[data-hot] { z-index: 2; outline-color: var(--color-ink); outline-width: 2px; background-image: none; }
+  .s--all[data-hot] { background: var(--color-white); color: var(--color-ink); --color-focus: var(--color-ink); --chad-bg: var(--color-white); }
+  .s--all[data-hot] .s__meta, .s--all[data-hot] .s__meta time { color: var(--color-ink-soft); }
+  }
+
+  @media (min-width: 72rem) {
+    .s--tall .s__type { writing-mode: horizontal-tb; text-orientation: mixed; white-space: normal; text-align: center; font-size: 0.75rem; }
+    .s--tall .s__title { margin-top: 0.5rem; }
+    .s--all { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 1rem; padding: 0.5rem 1rem; background: var(--color-ink); color: var(--color-white); --color-focus: var(--color-white); --chad-bg: var(--color-ink); }
+    .s--all .s__title { font-size: var(--text-lg); letter-spacing: 0.2em; }
+    .s--all .s__meta { display: none; }
+    .s--all .s__status { min-height: 0; }
+    .s--checkin { gap: 1.5rem; }
+    .s--checkin .s__meta { display: none; }
+    .s--checkin .s__meta time { color: inherit; }
+  .s--all[data-hot] { background: var(--color-white); color: var(--color-ink); --color-focus: var(--color-ink); --chad-bg: var(--color-white); }
+  .s--all[data-hot] .s__meta, .s--all[data-hot] .s__meta time { color: var(--color-ink-soft); }
+  }
+
+
+  @media (min-width: 72rem) {
+    .tt__mark { display: flex; justify-content: center; align-items: center; padding: 0; text-align: center; }
+    .s--tall { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 4.5rem minmax(0, 1fr) 4.5rem; align-items: start; padding: 0.5rem; gap: 0.75rem 0.25rem; }
+    .s--tall .s__type { grid-column: 1; grid-row: 1; justify-self: start; align-self: start; min-height: 1.5rem; display: flex; align-items: center; text-align: left; white-space: nowrap; font-size: 0.75rem; }
+    .s--tall :global(.punch) { grid-column: 2; grid-row: 1; align-self: start; order: 0; }
+    .s--tall .s__title { grid-column: 1 / -1; grid-row: 2; justify-self: center; align-self: center; margin-top: 0; min-height: 0; max-height: 100%; max-width: 100%; }
+    .s--tall .s__meta { grid-column: 1 / -1; grid-row: 3; align-self: end; justify-self: center; margin-top: 0; }
+  }
+
+
+  @media (min-width: 72rem) {
+    .tt__room, .tt::before { border-bottom: 1px solid #b3b3b3; }
+    .s--all { box-shadow: inset 0 1px 0 #b3b3b3; }
+    .s--all .s__title { margin: 0; letter-spacing: 0.12em; text-align: center; }
+    .s--all { display: grid; grid-template-columns: minmax(0, 1fr) auto 1.5rem minmax(0, 1fr); grid-template-rows: 1fr; column-gap: 0.75rem; }
+    .s--all .s__title { grid-column: 2; grid-row: 1; }
+    .s--all :global(.punch) { position: relative; right: auto; top: auto; translate: none; grid-column: 3; grid-row: 1; align-self: center; }
+    .s--checkin .s__title, .s--all:not(:has(.punch)) .s__title { grid-column: 2 / 4; }
+    .s--all .s__status { position: absolute; left: 1rem; top: 50%; translate: 0 -50%; }
+  }
+
+  @media (min-width: 72rem) {
+    .s--break:not(.s--all) {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 3.5rem minmax(0, 1fr) 3.5rem;
+      gap: 0.5rem;
+      padding: 0.75rem;
+    }
+
+    .s--break:not(.s--all) .s__title {
+      grid-column: 1;
+      grid-row: 2;
+      place-self: center;
+      margin: 0;
+      padding: 0.15em 0.5em;
+      background: var(--color-paper);
+      writing-mode: horizontal-tb;
+      text-align: center;
+      letter-spacing: 0.06em;
+      line-height: 1.5;
+    }
+
+    .s--break:not(.s--all) .s__meta {
+      grid-column: 1;
+      grid-row: 3;
+      align-self: end;
+      justify-self: center;
+      flex-direction: row;
+      justify-content: center;
+      margin: 0;
+      padding: 0.1em 0.3em;
+      background: var(--color-paper);
+    }
+
+    .s--break:not(.s--all)[data-hot] .s__title,
+    .s--break:not(.s--all)[data-hot] .s__meta {
+      background: var(--color-ink);
     }
   }
 </style>

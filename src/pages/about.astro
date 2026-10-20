@@ -121,10 +121,9 @@ const editions = [
   }
 
   .editions__row.is-current {
-    margin-inline: calc(var(--space-4) * -1);
     padding-inline: var(--space-4);
-    background: var(--color-ink);
-    color: var(--color-white);
+    background: var(--color-white);
+    border-left: var(--rule-block) solid var(--color-ink);
   }
 
   .editions__year {
@@ -162,4 +161,30 @@ const editions = [
       grid-column: 1 / -1;
     }
   }
+
+  .editions__row { align-items: center; min-height: 6.5rem; padding-inline: 1rem; }
+  .editions__row.is-current .editions__year { width: fit-content; padding: 0.2em 0.3em; background: var(--color-ink); color: var(--color-white); border-radius: var(--radius-chip); }
+  .editions__theme { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .about-page__org { max-width: 58rem; width: 100%; }
+  .about-page__org :global(.row-table tbody tr:first-child td) { font-family: var(--font-sign); font-size: clamp(1.6rem, 3vw, 2.25rem); font-weight: var(--weight-sign-heavy); letter-spacing: -0.02em; }
+  .about-page__org :global(.row-table tbody tr:first-child) { background: var(--color-white); }
+
+
+  .about-page__intro { grid-column: 1 / span 6; grid-row: 1; }
+  .about-page__org { grid-column: 8 / -1; grid-row: 1; max-width: none; align-self: start; }
+  .about-page__editions { grid-row: 2; }
+  .about-page__org :global(.row-table tbody th) { width: 34%; font-size: 0.95rem; }
+  .about-page__org :global(.row-table tbody tr:first-child td) { font-size: clamp(1.5rem, 2vw, 2rem); }
+  @media (max-width: 71.99rem) {
+    .about-page__intro, .about-page__org, .about-page__editions { grid-column: 1 / -1; grid-row: auto; }
+    .about-page__org { order: 1; }
+    .about-page__editions { order: 2; }
+  }
+
+
+  .editions__row.is-current { border-left: 0; box-shadow: inset 4px 0 0 var(--color-ink); }
+  .editions__row.is-current .editions__year { width: auto; padding: 0; background: none; color: var(--color-ink); border-radius: 0; }
+  .editions__year { font-size: 2.5rem; }
+  .editions__row.is-current .editions__label { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.4em; }
+
 </style>
