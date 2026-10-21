@@ -1,0 +1,38 @@
+---
+import Stamp from './Stamp.astro';
+
+interface Props {
+  label: string;
+  note?: string;
+  class?: string;
+}
+const { label, note, class: className } = Astro.props;
+---
+
+<div class:list={['empty-state', className]}>
+  <Stamp label={label} size="md" />
+  {note && <p>{note}</p>}
+</div>
+
+<style>
+  .empty-state {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: var(--space-3);
+    min-height: var(--empty-state-height);
+    padding: var(--space-5);
+    border: var(--rule-mid) dashed var(--color-ink);
+    border-radius: var(--radius-chip);
+    background: var(--color-white);
+    text-align: center;
+  }
+  .empty-state :global(.stamp) {
+    justify-self: center;
+  }
+  .empty-state p {
+    max-width: 36ch;
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+</style>

@@ -119,6 +119,7 @@ export const typeLabels: Record<SessionType, string> = {
 };
 
 export const isListed = (s: Session) => s.type !== 'break';
+export const canBookmark = (s: Session) => isListed(s) && s.rooms !== 'all';
 
 export const phases = [
   { id: 'phase-arrival', label: '報到與開幕', from: '08:00', to: '10:30' },

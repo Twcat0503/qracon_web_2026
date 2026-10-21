@@ -4,6 +4,7 @@ import PageHead from '../components/PageHead.astro';
 import StationSign from '../components/StationSign.astro';
 import RowTable from '../components/RowTable.astro';
 import Stamp from '../components/Stamp.astro';
+import EmptyState from '../components/EmptyState.astro';
 import { rooms } from '../data/rooms';
 import { sessions, isListed } from '../data/sessions';
 import { minutesOf } from '../utils/time';
@@ -44,13 +45,13 @@ const modes = [
 
     <section class="venue-page__map" aria-labelledby="map-title">
       <h2 id="map-title">場地平面圖</h2>
-      <div class="map-frame">
-        <Stamp label="平面圖待取得" size="md" />
-      </div>
+      <EmptyState label="平面圖待取得" />
     </section>
 
     <section class="venue-page__rooms" aria-labelledby="rooms-title">
-      <h2 class="visually-hidden" id="rooms-title">場地一覽</h2>
+      <h2 class="visually-hidden" id="rooms-title">
+        場地一覽
+      </h2>
       <table class="rooms-table">
         <caption>場地一覽（依議程草案）</caption>
         <thead>
@@ -62,24 +63,24 @@ const modes = [
           </tr>
         </thead>
         <tbody>
-          {
-            rooms.map((room) => (
-              <tr>
-                <th scope="row">{room.name}</th>
-                <td class="tnum">{room.capacity ? `${room.capacity} 人` : '—'}</td>
-                <td>{usage(room.id)}</td>
-                <td>
-                  <Stamp label="待確認" tilt={false} />
-                </td>
-              </tr>
-            ))
-          }
+          {rooms.map((room) => (
+            <tr>
+              <th scope="row">{room.name}</th>
+              <td class="tnum">{room.capacity ? `${room.capacity} 人` : '—'}</td>
+              <td>{usage(room.id)}</td>
+              <td>
+                <Stamp label="待確認" tilt={false} />
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </section>
 
     <section class="venue-page__transport" aria-labelledby="transport-title">
-      <h2 class="visually-hidden" id="transport-title">交通方式</h2>
+      <h2 class="visually-hidden" id="transport-title">
+        交通方式
+      </h2>
       <RowTable caption="怎麼到院區" rows={modes} />
       <RowTable
         class="venue-page__walk"
@@ -109,18 +110,6 @@ const modes = [
   .venue-page__map h2 {
     margin-bottom: var(--space-3);
     font-size: var(--text-xl);
-  }
-
-  .map-frame {
-    display: grid;
-    align-content: center;
-    justify-items: start;
-    gap: var(--space-4);
-    min-height: 16rem;
-    padding: var(--space-6);
-    border: var(--rule-mid) dashed var(--color-ink);
-    border-radius: var(--radius-chip);
-    background: var(--color-white);
   }
 
   .venue-page__rooms {
@@ -196,4 +185,3 @@ const modes = [
     }
   }
 </style>
-

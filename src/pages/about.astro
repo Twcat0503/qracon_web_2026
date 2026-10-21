@@ -13,7 +13,13 @@ const editions = [
     theme: site.theme.title,
     current: true,
   },
-  { year: '2025', label: '第三屆', place: '臺北・人文社會科學館', theme: 'Planck 100 普朗克百年', current: false },
+  {
+    year: '2025',
+    label: '第三屆',
+    place: '臺北・人文社會科學館',
+    theme: 'Planck 100 普朗克百年',
+    current: false,
+  },
 ];
 ---
 
@@ -31,25 +37,24 @@ const editions = [
         想讓學術界、產業界與教育端在同一天交流，也想接起中學到大學之間的那道斷層：讓對量子好奇的高中生，看得到大學與研究的樣子；也讓研究者與業界，遇見下一代的量子人。
       </p>
       <p>
-        2026 年，年會第一次離開臺北，移師臺南的{site.venue.org}{site.venue.name}。
+        2026 年，年會第一次離開臺北，移師臺南的{site.venue.org}
+        {site.venue.name}。
       </p>
     </section>
 
     <section class="about-page__editions" aria-labelledby="editions-title">
       <h2 id="editions-title">歷屆</h2>
       <ol class="editions" role="list">
-        {
-          editions.map((e) => (
-            <li class:list={['editions__row', { 'is-current': e.current }]}>
-              <p class="editions__year">{e.year}</p>
-              <p class="editions__label">{e.label}</p>
-              <p class="editions__place">{e.place}</p>
-              <p class="editions__theme">
-                年度主題　{e.theme ?? <Stamp label="待公布" tilt={false} />}
-              </p>
-            </li>
-          ))
-        }
+        {editions.map((e) => (
+          <li class:list={['editions__row', { 'is-current': e.current }]}>
+            <p class="editions__year">{e.year}</p>
+            <p class="editions__label">{e.label}</p>
+            <p class="editions__place">{e.place}</p>
+            <p class="editions__theme">
+              年度主題　{e.theme ?? <Stamp label="待公布" tilt={false} />}
+            </p>
+          </li>
+        ))}
         <li class="editions__row editions__row--todo">
           <p class="editions__year">—</p>
           <p class="editions__label">第一、二屆</p>
@@ -61,14 +66,19 @@ const editions = [
     </section>
 
     <section class="about-page__org" aria-labelledby="org-title">
-      <h2 class="visually-hidden" id="org-title">單位與聯絡</h2>
+      <h2 class="visually-hidden" id="org-title">
+        單位與聯絡
+      </h2>
       <RowTable
         caption="單位與聯絡"
         rows={[
           { label: '指導單位', value: site.advisor },
           { label: '主辦單位', value: site.organizers?.join('、') ?? null, stamp: '待確認' },
           { label: '聯絡信箱', value: site.contactEmail },
-          { label: '社群帳號', value: site.social.length ? site.social.map((s) => s.label).join('、') : null },
+          {
+            label: '社群帳號',
+            value: site.social.length ? site.social.map((s) => s.label).join('、') : null,
+          },
         ]}
       />
     </section>
@@ -86,10 +96,6 @@ const editions = [
   .about-page h2 {
     margin-bottom: var(--space-5);
     font-size: var(--text-2xl);
-  }
-
-  .about-page__intro {
-    grid-column: 1 / span 7;
   }
 
   .about-page__intro p {
@@ -114,23 +120,19 @@ const editions = [
   .editions__row {
     display: grid;
     grid-template-columns: 7rem 7rem minmax(0, 1fr) minmax(0, 1fr);
-    align-items: baseline;
     gap: var(--space-2) var(--space-5);
     padding-block: var(--space-4);
     border-bottom: var(--rule-hair) solid var(--color-ink);
   }
 
   .editions__row.is-current {
-    margin-inline: calc(var(--space-4) * -1);
     padding-inline: var(--space-4);
-    background: var(--color-ink);
-    color: var(--color-white);
+    background: var(--color-white);
   }
 
   .editions__year {
     font-family: var(--font-sign);
     font-weight: var(--weight-sign-heavy);
-    font-size: var(--text-2xl);
     line-height: 1;
   }
 
@@ -161,5 +163,83 @@ const editions = [
     .editions__theme {
       grid-column: 1 / -1;
     }
+  }
+
+  .editions__row {
+    align-items: center;
+    min-height: 6.5rem;
+    padding-inline: 1rem;
+  }
+  .editions__theme {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .about-page__org {
+    width: 100%;
+  }
+  .about-page__org :global(.row-table tbody tr:first-child td) {
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign-heavy);
+    letter-spacing: -0.02em;
+  }
+  .about-page__org :global(.row-table tbody tr:first-child) {
+    background: var(--color-white);
+  }
+
+  .about-page__intro {
+    grid-column: 1 / span 6;
+    grid-row: 1;
+  }
+  .about-page__org {
+    grid-column: 8 / -1;
+    grid-row: 1;
+    max-width: none;
+    align-self: start;
+  }
+  .about-page__editions {
+    grid-row: 2;
+  }
+  .about-page__org :global(.row-table tbody th) {
+    width: 34%;
+    font-size: 0.95rem;
+  }
+  .about-page__org :global(.row-table tbody tr:first-child td) {
+    font-size: clamp(1.5rem, 2vw, 2rem);
+  }
+  @media (max-width: 71.99rem) {
+    .about-page__intro,
+    .about-page__org,
+    .about-page__editions {
+      grid-column: 1 / -1;
+      grid-row: auto;
+    }
+    .about-page__org {
+      order: 1;
+    }
+    .about-page__editions {
+      order: 2;
+    }
+  }
+
+  .editions__row.is-current {
+    border-left: 0;
+    box-shadow: inset 4px 0 0 var(--color-ink);
+  }
+  .editions__row.is-current .editions__year {
+    width: auto;
+    padding: 0;
+    background: none;
+    color: var(--color-ink);
+    border-radius: 0;
+  }
+  .editions__year {
+    font-size: 2.5rem;
+  }
+  .editions__row.is-current .editions__label {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.4em;
   }
 </style>

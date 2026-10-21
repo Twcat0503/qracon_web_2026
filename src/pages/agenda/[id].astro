@@ -1,19 +1,22 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Ticket from '../../components/Ticket.astro';
-import Stamp from '../../components/Stamp.astro';
+import SessionContent from '../../components/agenda/SessionContent.astro';
 import Icon from '../../components/Icon.astro';
-import PunchToggle from '../../components/agenda/PunchToggle.astro';
 import Words from '../../components/Words.astro';
-import { sessions, typeLabels, isListed } from '../../data/sessions';
+import { sessions, isListed } from '../../data/sessions';
 import { roomById } from '../../data/rooms';
 import { site } from '../../data/site';
-import { durationLabel, hhmm, minutesOf } from '../../utils/time';
+import { hhmm, minutesOf } from '../../utils/time';
 import type { Session } from '../../types/agenda';
 
 export const getStaticPaths = (() =>
-  sessions.filter(isListed).map((session) => ({ params: { id: session.id }, props: { session } }))) satisfies GetStaticPaths;
+  sessions
+    .filter(isListed)
+    .map((session) => ({
+      params: { id: session.id },
+      props: { session },
+    }))) satisfies GetStaticPaths;
 
 interface Props {
   session: Session;
@@ -42,93 +45,49 @@ const next = index >= 0 && index < sameRoom.length - 1 ? sameRoom[index + 1] : u
       <span>回時刻表</span>
     </a>
 
-    <Ticket class="detail__ticket" stamp={site.rocDate} labelledby="session-title">
-      <p class="dt-issuer">
-        <span>{typeLabels[session.type]}</span>
-        <Stamp label="草案" tilt={false} />
-      </p>
-      <h1 class="dt-title" id="session-title"><Words text={session.title} /></h1>
-      <dl class="dt-rows">
-        <div>
-          <dt>日期</dt>
-          <dd>
-            <time datetime={site.date}>{site.dateLabel}</time><span class="dt-cjk">（{site.weekday}）</span>
-          </dd>
-        </div>
-        <div>
-          <dt>時間</dt>
-          <dd>
-            <time datetime={session.start}>{hhmm(session.start)}</time>–<time datetime={session.end}
-              >{hhmm(session.end)}</time
-            ><span class="dt-cjk dt-duration">{durationLabel(session.start, session.end)}</span>
-          </dd>
-        </div>
-        <div>
-          <dt>場地</dt>
-          <dd class="dt-cjk">{roomNames.join('、')}</dd>
-        </div>
-      </dl>
-      <div class="dt-actions">
-        <PunchToggle id={session.id} title={session.title} variant="full" />
-      </div>
-    </Ticket>
-
-    <div class="detail__body">
-      <section aria-labelledby="speakers-title">
-        <h2 id="speakers-title">講者</h2>
-        <p><Stamp label="待公布" tilt={false} /></p>
-      </section>
-
-      <section aria-labelledby="abstract-title">
-        <h2 id="abstract-title">摘要</h2>
-        {session.abstract ? <p>{session.abstract}</p> : <p><Stamp label="待公布" tilt={false} /></p>}
-      </section>
-
-      {
-        session.note && (
-          <section aria-labelledby="note-title">
-            <h2 id="note-title">草案備註</h2>
-            <p>{session.note}</p>
-          </section>
-        )
-      }
+    <div class="detail__content">
+      <SessionContent session={session} titleId="session-title" headingLevel={1} />
     </div>
 
-    {
-      (prev || next) && (
-        <nav class="stops" aria-label={`${roomNames[0]}的前後場次`}>
-          <p class="stops__room">{roomNames[0]}</p>
-          <ol role="list">
-            {prev && (
-              <li class="stops__stop">
-                <a href={`/agenda/${prev.id}/`}>
-                  <span class="stops__dot" aria-hidden="true" />
-                  <span class="stops__label">上一場</span>
-                  <span class="stops__time">{hhmm(prev.start)}</span>
-                  <span class="stops__title"><Words text={prev.title} /></span>
-                </a>
-              </li>
-            )}
-            <li class="stops__stop is-current" aria-current="page">
-              <span class="stops__dot" aria-hidden="true" />
-              <span class="stops__label">這一場</span>
-              <span class="stops__time">{hhmm(session.start)}</span>
-              <span class="stops__title"><Words text={session.title} /></span>
+    {(prev || next) && (
+      <nav class="stops" aria-label={`${roomNames[0]}的前後場次`}>
+        <p class="stops__room">{roomNames[0]}</p>
+        <ol role="list">
+          {prev && (
+            <li class="stops__stop">
+              <a href={`/agenda/${prev.id}/`}>
+                <span class="stops__dot" aria-hidden="true" />
+                <span class="stops__label">上一場</span>
+                <span class="stops__time">{hhmm(prev.start)}</span>
+                <span class="stops__title">
+                  <Words text={prev.title} />
+                </span>
+              </a>
             </li>
-            {next && (
-              <li class="stops__stop">
-                <a href={`/agenda/${next.id}/`}>
-                  <span class="stops__dot" aria-hidden="true" />
-                  <span class="stops__label">下一場</span>
-                  <span class="stops__time">{hhmm(next.start)}</span>
-                  <span class="stops__title"><Words text={next.title} /></span>
-                </a>
-              </li>
-            )}
-          </ol>
-        </nav>
-      )
-    }
+          )}
+          <li class="stops__stop is-current" aria-current="page">
+            <span class="stops__dot" aria-hidden="true" />
+            <span class="stops__label">這一場</span>
+            <span class="stops__time">{hhmm(session.start)}</span>
+            <span class="stops__title">
+              <Words text={session.title} />
+            </span>
+          </li>
+          {next && (
+            <li class="stops__stop">
+              <a href={`/agenda/${next.id}/`}>
+                <span class="stops__dot" aria-hidden="true" />
+                <span class="stops__label">下一場</span>
+                <span class="stops__time">{hhmm(next.start)}</span>
+                <span class="stops__title">
+                  <Words text={next.title} />
+                </span>
+              </a>
+            </li>
+          )}
+        </ol>
+      </nav>
+    )}
   </div>
 </BaseLayout>
 
@@ -156,89 +115,13 @@ const next = index >= 0 && index < sameRoom.length - 1 ? sameRoom[index + 1] : u
     text-decoration: underline;
   }
 
-  
-  .detail :global(.detail__ticket) {
+  .detail__content {
     grid-column: 1 / span 8;
-    view-transition-name: vt-session;
+    background: var(--color-white);
+    border: var(--rule-thin) solid var(--color-ink);
+    border-radius: var(--radius-chip);
   }
 
-  .dt-issuer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-    padding-bottom: var(--space-3);
-    border-bottom: var(--rule-hair) solid var(--color-ink);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-bold);
-    letter-spacing: 0.1em;
-  }
-
-  .dt-title {
-    margin-block: var(--space-5);
-    font-size: var(--text-3xl);
-    letter-spacing: 0.02em;
-  }
-
-  .dt-rows {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-3) var(--space-7);
-    padding-block: var(--space-3);
-    border-block: var(--rule-hair) solid var(--color-ink);
-  }
-
-  .dt-rows dt {
-    color: var(--color-ink-soft);
-    font-size: var(--text-xs);
-    letter-spacing: 0.14em;
-  }
-
-  .dt-rows dd {
-    margin: 0;
-    font-family: var(--font-sign);
-    font-weight: var(--weight-sign-heavy);
-    font-size: var(--text-xl);
-    letter-spacing: 0.04em;
-  }
-
-  .dt-cjk {
-    font-family: var(--font-sans);
-    font-weight: var(--weight-bold);
-    font-size: var(--text-base);
-    letter-spacing: 0;
-  }
-
-  .dt-duration {
-    margin-left: var(--space-3);
-    color: var(--color-ink-soft);
-    font-weight: var(--weight-regular);
-    font-size: var(--text-sm);
-  }
-
-  .dt-actions {
-    margin-top: var(--space-5);
-    padding-bottom: var(--space-4);
-  }
-
-  .detail__body {
-    grid-column: 1 / span 7;
-    display: grid;
-    gap: var(--space-6);
-  }
-
-  .detail__body h2 {
-    margin-bottom: var(--space-3);
-    padding-bottom: var(--space-2);
-    border-bottom: var(--rule-heavy) solid var(--color-ink);
-    font-size: var(--text-xl);
-  }
-
-  .detail__body p {
-    max-width: var(--measure);
-  }
-
-  
   .stops {
     grid-column: 1 / -1;
   }
@@ -259,7 +142,7 @@ const next = index >= 0 && index < sameRoom.length - 1 ? sameRoom[index + 1] : u
   }
 
   .stops__stop::before {
-    content: "";
+    content: '';
     position: absolute;
     left: 0;
     right: 0;
@@ -326,7 +209,6 @@ const next = index >= 0 && index < sameRoom.length - 1 ? sameRoom[index + 1] : u
     text-decoration: underline;
   }
 
-  
   @media (max-width: 47.99rem) {
     .stops ol {
       grid-template-columns: 1fr;
@@ -383,8 +265,7 @@ const next = index >= 0 && index < sameRoom.length - 1 ? sameRoom[index + 1] : u
   }
 
   @media (max-width: 71.99rem) {
-    .detail :global(.detail__ticket),
-    .detail__body {
+    .detail__content {
       grid-column: 1 / -1;
     }
   }
@@ -394,4 +275,3 @@ const next = index >= 0 && index < sameRoom.length - 1 ? sameRoom[index + 1] : u
   import { initPunches } from '../../scripts/punches';
   initPunches();
 </script>
-

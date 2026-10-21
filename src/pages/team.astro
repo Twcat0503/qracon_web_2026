@@ -1,31 +1,21 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHead from '../components/PageHead.astro';
-import Stamp from '../components/Stamp.astro';
+import EmptyState from '../components/EmptyState.astro';
 ---
 
 <BaseLayout title="籌備團隊" description="QRACON 2026 籌備團隊名單。">
-  <PageHead
-    title="籌備團隊"
-    status="待公布"
-  />
+  <PageHead title="籌備團隊" status="待公布" />
 
   <div class="wrap team-page">
-    <div class="crew-frame">
-      <Stamp label="名單待公布" size="md" />
-    </div>
+    <EmptyState class="team-page__empty" label="名單待公布" />
   </div>
 </BaseLayout>
 
 <style>
-  .crew-frame {
-    display: grid;
-    justify-items: start;
-    gap: var(--space-4);
+  .team-page :global(.team-page__empty) {
+    width: 100%;
     max-width: 44rem;
-    padding: var(--space-7) var(--space-6);
-    border: var(--rule-mid) dashed var(--color-ink);
-    border-radius: var(--radius-chip);
-    background: var(--color-white);
+    margin-inline: auto;
   }
 </style>

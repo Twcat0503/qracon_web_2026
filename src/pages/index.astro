@@ -41,10 +41,26 @@ const board = [
   { time: hhmm(byId('opening').start), item: '開幕', place: '全體' },
   { time: hhmm(byId('keynote-dialogue').start), item: '主題對談', place: '全體' },
   { time: hhmm(byId('keynote').start), item: '主題演講', place: '全體' },
-  { time: '10:30', item: '上午分軌與場外活動', place: `${busyRooms('10:30', '12:00')} 處場地同時進行` },
-  { time: hhmm(byId('lunch-centers').start), item: '午餐', place: `${roomsOf('lunch-centers')}、${roomsOf('lunch-rooms')}` },
-  { time: '13:30', item: '下午分軌與工作坊', place: `${busyRooms('13:30', '16:00')} 處場地同時進行` },
-  { time: hhmm(byId('open-lightning').start), item: '任意閃電講', place: roomsOf('open-lightning') },
+  {
+    time: '10:30',
+    item: '上午分軌與場外活動',
+    place: `${busyRooms('10:30', '12:00')} 處場地同時進行`,
+  },
+  {
+    time: hhmm(byId('lunch-centers').start),
+    item: '午餐',
+    place: `${roomsOf('lunch-centers')}、${roomsOf('lunch-rooms')}`,
+  },
+  {
+    time: '13:30',
+    item: '下午分軌與工作坊',
+    place: `${busyRooms('13:30', '16:00')} 處場地同時進行`,
+  },
+  {
+    time: hhmm(byId('open-lightning').start),
+    item: '任意閃電講',
+    place: roomsOf('open-lightning'),
+  },
   { time: hhmm(byId('closing').start), item: '閉幕', place: '全體' },
   { time: hhmm(byId('departure').start), item: '賦歸', place: '—' },
 ];
@@ -70,17 +86,22 @@ const serial = String(site.edition).padStart(4, '0');
       </h1>
 
       <div class="hero__copy">
-        <p class="hero__name" aria-hidden="true">{site.nameZh}</p>
+        <p class="hero__name" aria-hidden="true">
+          {site.nameZh}
+        </p>
         <p class="hero__en">{site.nameEn}</p>
       </div>
 
-      <Ticket class="hero__ticket" slits stamp={site.rocDate} labelledby="ticket-station">
+      <Ticket class="hero__ticket" stamp={site.rocDate} labelledby="ticket-station">
         <h2 class="visually-hidden">活動資訊</h2>
         <p class="tk-issuer">
           <span>{site.nameZh}</span>
-          <span class="tk-serial"
-            >{site.editionLabel}<b class="tnum"><FlapText text={`No.${serial}`} variant="print" mode="observed" /></b></span
-          >
+          <span class="tk-serial">
+            {site.editionLabel}
+            <b class="tnum">
+              <FlapText text={`No.${serial}`} variant="print" mode="observed" />
+            </b>
+          </span>
         </p>
         <p class="tk-station" id="ticket-station">
           <span class="tk-station__org">{site.venue.org}</span>
@@ -91,17 +112,18 @@ const serial = String(site.edition).padStart(4, '0');
           <div>
             <dt>日期</dt>
             <dd>
-              <time datetime={site.date}
-                ><FlapText text={site.dateLabel} variant="print" mode="observed" /></time
-              ><span class="tk-weekday">（{site.weekday}）</span>
+              <time datetime={site.date}>
+                <FlapText text={site.dateLabel} variant="print" mode="observed" />
+              </time>
+              <span class="tk-weekday">（{site.weekday}）</span>
             </dd>
           </div>
           <div>
             <dt>報到</dt>
             <dd>
-              <time datetime={`${site.date}T${site.checkIn}+08:00`}
-                ><FlapText text={site.checkIn} variant="print" mode="observed" /></time
-              >
+              <time datetime={`${site.date}T${site.checkIn}+08:00`}>
+                <FlapText text={site.checkIn} variant="print" mode="observed" />
+              </time>
             </dd>
           </div>
           <div>
@@ -110,15 +132,13 @@ const serial = String(site.edition).padStart(4, '0');
           </div>
         </dl>
         <div class="tk-actions">
-          {
-            registrationOpen ? (
-              <Button href={site.registration.url ?? undefined} icon="arrow-up-right">
-                報名取票
-              </Button>
-            ) : (
-              <Stamp label="報名即將開放" size="md" tilt={false} class="tk-status" />
-            )
-          }
+          {registrationOpen ? (
+            <Button href={site.registration.url ?? undefined} icon="arrow-up-right">
+              報名取票
+            </Button>
+          ) : (
+            <span class="tk-status">報名即將開放</span>
+          )}
           <Button href="/agenda/" variant={registrationOpen ? 'line' : 'ink'} icon="arrow-right">
             看議程草案
           </Button>
@@ -131,32 +151,46 @@ const serial = String(site.edition).padStart(4, '0');
 
   <section class="about wrap" aria-labelledby="about-title">
     <div class="about__text">
-      <h2 class="section-title" id="about-title">學生主導的量子年會，第四年</h2>
+      <h2 class="section-title" id="about-title">
+        學生主導的量子年會，第四年
+      </h2>
       <p>
-        QRACON（{site.nameEn}）是由學生主導的量子科技年會。我們想讓學術界、產業界與教育端，在同一天、同一個院區裡交流，也想把中學到大學之間那道斷層接起來。
+        QRACON（{site.nameEn}
+        ）是由學生主導的量子科技年會。我們想讓學術界、產業界與教育端，在同一天、同一個院區裡交流，也想把中學到大學之間那道斷層接起來。
       </p>
       <p>
         議程從量子電腦的基礎，一路排到 HPC、資安、藥物開發與量子感測；場外還有 RPG
         導遊團、對戰遊戲和塗鴉躲貓貓。高中生和研究者，都能在時刻表上找到自己的那一場。
       </p>
-      <p class="about__theme">
-        <span class="about__theme-label">年度主題</span>
-        {site.theme.title ?? <Stamp label="待公布" size="md" />}
-      </p>
-      <Button href="/about/" variant="line" icon="arrow-right">關於 QRACON</Button>
+      <div class="about__theme">
+        <span class="about__theme-label">QRACON 2026 / THEME</span>
+        <p class="about__theme-title">{site.theme.title ?? '年度主題'}</p>
+        {!site.theme.title && (
+          <Stamp label="待公布" size="lg" placement="corner" appearance="paper" />
+        )}
+      </div>
+      <Button href="/about/" variant="line" icon="arrow-right">
+        關於 QRACON
+      </Button>
     </div>
   </section>
 
   <section class="departures" aria-labelledby="board-title">
     <div class="wrap departures__inner">
       <div class="departures__head">
-        <h2 class="section-title" id="board-title">一天的時刻表</h2>
+        <p class="departures__eyebrow">QRACON 2026 / DAY PLAN</p>
+        <h2 class="section-title" id="board-title">
+          一天的
+          <br />
+          時刻表
+        </h2>
         <p>
           {site.dateLabel}（{site.weekday}）{site.checkIn} 開始報到。
         </p>
       </div>
 
       <div class="board">
+        <Stamp label="議程草案" size="xl" placement="edge" appearance="paper" />
         <table class="board__table">
           <caption class="visually-hidden">議程草案：一天的主要時刻</caption>
           <thead>
@@ -167,28 +201,23 @@ const serial = String(site.edition).padStart(4, '0');
             </tr>
           </thead>
           <tbody>
-            {
-              board.map((row) => (
-                <tr>
-                  <td class="board__time">
-                    <time datetime={`${site.date}T${row.time}+08:00`}>
-                      <FlapText text={row.time} size="sm" />
-                    </time>
-                  </td>
-                  <th scope="row" class="board__item">
-                    {row.item}
-                  </th>
-                  <td class="board__place">{row.place}</td>
-                </tr>
-              ))
-            }
+            {board.map((row) => (
+              <tr>
+                <td class="board__time">
+                  <time datetime={`${site.date}T${row.time}+08:00`}>
+                    <FlapText text={row.time} size="sm" />
+                  </time>
+                </td>
+                <th scope="row" class="board__item">
+                  {row.item}
+                </th>
+                <td class="board__place">{row.place}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
 
         <div class="board__foot">
-          <p>
-            <Stamp label="草案" tilt={false} />
-          </p>
           <Button href="/agenda/" variant="line" icon="arrow-right" class="board__cta">
             看完整時刻表
           </Button>
@@ -198,35 +227,41 @@ const serial = String(site.edition).padStart(4, '0');
   </section>
 
   <section class="venue wrap" aria-labelledby="venue-title">
-    <h2 class="section-title" id="venue-title">怎麼到南部院區</h2>
+    <h2 class="section-title" id="venue-title">
+      怎麼到南部院區
+    </h2>
 
     <div class="venue__grid">
       <StationSign class="venue__sign" />
 
       <div class="venue__modes">
         <ul class="modes" role="list">
-          {
-            ['高鐵', '臺鐵', '開車', '接駁車'].map((mode) => (
-              <li class="modes__row">
-                <span class="modes__name">{mode}</span>
-                <span class="modes__detail">
-                  路線說明 <Stamp label="待公布" tilt={false} />
-                </span>
-              </li>
-            ))
-          }
+          {['高鐵', '臺鐵', '開車', '接駁車'].map((mode) => (
+            <li class="modes__row">
+              <span class="modes__name">{mode}</span>
+              <span class="modes__detail">
+                路線說明 <Stamp label="待公布" tilt={false} />
+              </span>
+            </li>
+          ))}
         </ul>
-        <Button href="/venue/" variant="line" icon="arrow-right">會場與交通</Button>
+        <Button href="/venue/" variant="line" icon="arrow-right">
+          會場與交通
+        </Button>
       </div>
     </div>
   </section>
 
   <section class="partners wrap" aria-labelledby="partners-title">
-    <h2 class="section-title" id="partners-title">指導與贊助</h2>
+    <h2 class="section-title" id="partners-title">
+      指導與贊助
+    </h2>
     <dl class="partners__list">
       <div class="partners__row">
         <dt>指導單位</dt>
-        <dd><span class="plate">{site.advisor}</span></dd>
+        <dd>
+          <span class="plate">{site.advisor}</span>
+        </dd>
       </div>
       <div class="partners__row">
         <dt>主辦單位</dt>
@@ -236,18 +271,21 @@ const serial = String(site.edition).padStart(4, '0');
       </div>
       <div class="partners__row">
         <dt>贊助夥伴</dt>
-        <dd><Stamp label="招募中" tilt={false} /></dd>
+        <dd>
+          <Stamp label="招募中" tilt={false} />
+        </dd>
       </div>
     </dl>
     <div class="partners__cta">
       <p>想一起支持學生辦的量子年會？贊助方案正在整理。</p>
-      <Button href="/sponsors/" variant="line" icon="arrow-right">贊助方案</Button>
+      <Button href="/sponsors/" variant="line" icon="arrow-right">
+        贊助方案
+      </Button>
     </div>
   </section>
 </BaseLayout>
 
 <style>
-  
   .hero {
     position: relative;
     isolation: isolate;
@@ -293,9 +331,6 @@ const serial = String(site.edition).padStart(4, '0');
 
   .hero__en {
     margin-top: var(--space-3);
-  }
-
-  .hero__en {
     font-family: var(--font-sign);
     font-weight: var(--weight-sign);
     font-size: var(--text-md);
@@ -310,20 +345,15 @@ const serial = String(site.edition).padStart(4, '0');
     align-self: start;
   }
 
-  
   .tk-issuer {
     display: flex;
     justify-content: space-between;
-    gap: var(--space-4);
-    padding-bottom: var(--space-3);
     border-bottom: var(--rule-hair) solid var(--color-ink);
-    font-size: var(--text-sm);
     font-weight: var(--weight-bold);
   }
 
   .tk-serial {
     display: inline-flex;
-    gap: var(--space-2);
     color: var(--color-ink-soft);
   }
 
@@ -338,35 +368,24 @@ const serial = String(site.edition).padStart(4, '0');
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    column-gap: var(--space-3);
-    margin-block: var(--space-3);
   }
 
   .tk-station__org {
     flex-basis: 100%;
-    font-size: var(--text-md);
     font-weight: var(--weight-bold);
-    letter-spacing: 0.2em;
   }
 
   .tk-station__name {
-    font-size: var(--text-3xl);
     font-weight: var(--weight-black);
-    letter-spacing: 0.12em;
-    line-height: 1.05;
   }
 
   .tk-station__city {
-    font-size: var(--text-lg);
     font-weight: var(--weight-bold);
   }
 
   .tk-rows {
     display: grid;
-    grid-template-columns: repeat(3, auto);
     justify-content: start;
-    gap: var(--space-2) var(--space-6);
-    padding-block: var(--space-3);
     border-block: var(--rule-hair) solid var(--color-ink);
   }
 
@@ -380,27 +399,23 @@ const serial = String(site.edition).padStart(4, '0');
     margin: 0;
     font-family: var(--font-sign);
     font-weight: var(--weight-sign-heavy);
-    font-size: var(--text-xl);
     line-height: var(--leading-snug);
     letter-spacing: 0.04em;
   }
 
   .tk-weekday {
     font-family: var(--font-sans);
-    font-size: 0.7em;
   }
 
   .tk-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3) var(--space-4);
     min-height: 3rem;
     margin-top: var(--space-4);
     padding-inline-end: var(--slit-zone);
   }
 
-  
   .section-title {
     font-size: var(--text-3xl);
     letter-spacing: 0.02em;
@@ -412,7 +427,6 @@ const serial = String(site.edition).padStart(4, '0');
     padding-top: var(--space-10);
   }
 
-  
   .about {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -438,7 +452,6 @@ const serial = String(site.edition).padStart(4, '0');
   }
 
   .about__theme {
-    display: flex;
     align-items: center;
     gap: var(--space-4);
     padding-block: var(--space-4);
@@ -452,7 +465,6 @@ const serial = String(site.edition).padStart(4, '0');
     margin-top: var(--space-5);
   }
 
-  
   .departures {
     margin-top: var(--space-10);
     background: var(--color-ink);
@@ -515,7 +527,6 @@ const serial = String(site.edition).padStart(4, '0');
   }
 
   .board__item {
-    font-size: var(--text-lg);
     font-weight: var(--weight-bold);
   }
 
@@ -528,7 +539,6 @@ const serial = String(site.edition).padStart(4, '0');
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
     gap: var(--space-4);
     margin-top: var(--space-6);
     color: var(--color-on-ink-soft);
@@ -556,7 +566,6 @@ const serial = String(site.edition).padStart(4, '0');
     color: var(--color-ink);
   }
 
-  
   .venue__grid {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -601,7 +610,6 @@ const serial = String(site.edition).padStart(4, '0');
     font-size: var(--text-sm);
   }
 
-  
   .partners__list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -642,7 +650,6 @@ const serial = String(site.edition).padStart(4, '0');
     border-top: var(--rule-hair) solid var(--color-ink);
   }
 
-  
   @media (max-width: 71.99rem) {
     .hero__title {
       grid-column: 1 / span 9;
@@ -700,16 +707,8 @@ const serial = String(site.edition).padStart(4, '0');
       font-size: var(--text-sm);
     }
 
-    .tk-station__name {
-      font-size: var(--text-2xl);
-    }
-
     .tk-rows {
       column-gap: var(--space-4);
-    }
-
-    .tk-rows dd {
-      font-size: var(--text-md);
     }
 
     .about__text,
@@ -739,5 +738,191 @@ const serial = String(site.edition).padStart(4, '0');
       font-size: var(--text-base);
     }
   }
-</style>
 
+  .tk-issuer {
+    align-items: center;
+    font-size: 0.75rem;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+  }
+  .tk-serial {
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem 0.5rem;
+  }
+  .tk-station {
+    position: relative;
+    margin-block: 1.25rem;
+    column-gap: 0.5rem;
+    padding-right: 5.25rem;
+  }
+  .tk-station__org {
+    font-size: 0.875rem;
+    letter-spacing: 0.14em;
+    margin-bottom: 0.5rem;
+  }
+  .tk-station__name {
+    font-size: clamp(2rem, 3.4vw, 3rem);
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+  }
+  .tk-station__city {
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+  .tk-rows {
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.8fr) minmax(0, 0.8fr);
+    gap: 1rem;
+    padding-block: 1rem;
+  }
+  .tk-rows > div + div {
+    border-left: 1px solid #d9d9d9;
+    padding-left: 1rem;
+  }
+  .tk-rows dt {
+    margin-bottom: 0.4rem;
+  }
+  .tk-rows dd {
+    font-size: clamp(1.2rem, 1.8vw, 1.65rem);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.1rem 0.25rem;
+    min-height: 2rem;
+  }
+  .tk-weekday {
+    font-size: 0.6em;
+    white-space: nowrap;
+  }
+  .tk-actions {
+    gap: 0.75rem;
+    padding-right: 0;
+    padding-bottom: 0.25rem;
+  }
+  .tk-actions :global(.btn) {
+    margin-left: auto;
+  }
+  .tk-status {
+    border: 0;
+    padding: 0;
+    color: var(--color-ink-soft);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+  }
+  .about__theme {
+    position: relative;
+    display: block;
+    padding: 1.5rem;
+    margin-block: 2rem;
+    border: 1.5px solid var(--color-ink);
+    background: var(--color-white);
+  }
+  .about__theme-label {
+    display: block;
+    font-family: var(--font-sign);
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    color: var(--color-ink-soft);
+  }
+  .about__text .about__theme-title {
+    margin-top: 0.75rem;
+    padding-right: 6rem;
+    font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+    font-weight: var(--weight-black);
+    line-height: 1.5;
+  }
+  .departures__eyebrow {
+    font-family: var(--font-sign);
+    font-size: 0.8rem !important;
+    letter-spacing: 0.16em;
+    margin-top: 0 !important;
+    margin-bottom: 1.25rem;
+  }
+  .departures__head .section-title {
+    font-size: clamp(2.75rem, 4vw, 4.5rem);
+    line-height: 1.15;
+  }
+  .departures__head {
+    align-self: start;
+  }
+  .board__table tbody tr {
+    transition: background-color 160ms;
+  }
+  .board__table tbody tr:hover {
+    background: var(--color-ink-raised);
+  }
+  .board__table td,
+  .board__table tbody th {
+    padding-block: 1rem;
+  }
+  .board__item {
+    font-size: clamp(1rem, 1.3vw, 1.125rem);
+  }
+  .board__place {
+    max-width: 16rem;
+    line-height: 1.6;
+  }
+  .venue__modes > :global(.btn) {
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 71.99rem) {
+    .departures__head .section-title br {
+      display: none;
+    }
+    .tk-station {
+      padding-right: 0;
+    }
+    .tk-station__name {
+      font-size: 2rem;
+    }
+    .tk-rows {
+      gap: 0.5rem;
+    }
+    .tk-rows > div + div {
+      padding-left: 0.5rem;
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .tk-station__name {
+      font-size: clamp(2rem, 8vw, 3rem);
+    }
+    .tk-rows dd {
+      font-size: 1.4rem;
+    }
+    .tk-issuer {
+      font-size: 0.7rem;
+    }
+    .board__place {
+      font-size: 0.75rem;
+      max-width: 8rem;
+    }
+    .about__theme {
+      padding: 1.25rem;
+    }
+    .about__text .about__theme-title {
+      padding-right: 0;
+      font-size: 1.4rem;
+    }
+  }
+  @media (max-width: 25rem) {
+    .tk-actions :global(.btn) {
+      width: 100%;
+      justify-content: center;
+      margin-left: 0;
+    }
+    .tk-rows dd {
+      font-size: 1.15rem;
+    }
+  }
+  .board {
+    position: relative;
+    padding-top: 1.25rem;
+  }
+  .board__foot {
+    justify-content: flex-end;
+  }
+  .board__table thead th {
+    padding-top: 0.75rem;
+  }
+</style>

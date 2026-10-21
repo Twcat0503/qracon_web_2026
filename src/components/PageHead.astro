@@ -34,11 +34,6 @@ const { title, lede, status } = Astro.props;
     line-height: 1.05;
   }
 
-  .page-head__title :global(.page-head__stamp) {
-    font-size: var(--text-base);
-  }
-
-  
   @media (prefers-reduced-motion: no-preference) {
     .page-head__title :global(.page-head__stamp) {
       animation: stamp-land var(--dur-base) var(--ease-out) 180ms backwards;
@@ -58,4 +53,3 @@ const { title, lede, status } = Astro.props;
     font-size: var(--text-lg);
   }
 </style>
-

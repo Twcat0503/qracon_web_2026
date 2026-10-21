@@ -6,10 +6,7 @@ import { site } from '../data/site';
 ---
 
 <BaseLayout title="行為準則" description="QRACON 2026 行為準則。">
-  <PageHead
-    title="行為準則"
-    status="原文待取得"
-  />
+  <PageHead title="行為準則" status="原文待取得" />
 
   <div class="wrap coc-page">
     <RowTable
@@ -25,5 +22,22 @@ import { site } from '../data/site';
 <style>
   .coc-page {
     max-width: 48rem;
+  }
+
+  :global(main:has(.coc-page)) {
+    display: flex;
+    flex-direction: column;
+  }
+  :global(main:has(.coc-page) .page-head) {
+    padding-bottom: 0;
+  }
+  .coc-page {
+    flex: 1;
+    display: grid;
+    align-content: center;
+    padding-block: var(--space-7);
+  }
+  :global(body:has(.coc-page) .site-footer) {
+    margin-top: 0;
   }
 </style>

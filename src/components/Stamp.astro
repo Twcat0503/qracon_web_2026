@@ -1,40 +1,94 @@
 ---
-
 interface Props {
   label?: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   tilt?: boolean;
+  placement?: 'inline' | 'corner' | 'edge';
+  appearance?: 'outline' | 'paper';
   class?: string;
 }
 
-const { label = '待公布', size = 'sm', tilt = true, class: className } = Astro.props;
+const {
+  label = '待公布',
+  size = 'sm',
+  tilt = true,
+  placement = 'inline',
+  appearance = 'outline',
+  class: className,
+} = Astro.props;
 ---
 
-<span class:list={['stamp', `stamp--${size}`, { 'stamp--tilt': tilt }, className]}>{label}</span>
+<span
+  class:list={[
+    'stamp',
+    `stamp--${size}`,
+    `stamp--${placement}`,
+    `stamp--${appearance}`,
+    { 'stamp--tilt': tilt },
+    className,
+  ]}
+>
+  {label}
+</span>
 
 <style>
   .stamp {
     display: inline-flex;
     align-items: center;
-    padding: 0.05em 0.55em 0.1em;
+    justify-content: center;
+    justify-self: start;
+    width: fit-content;
+    max-width: 100%;
+    padding: var(--stamp-padding-y) var(--stamp-padding-x);
     border: var(--rule-mid) solid currentColor;
     border-radius: var(--radius-chip);
     font-family: var(--font-sans);
-    font-size: var(--text-xs);
+    font-size: var(--stamp-font-size);
     font-weight: var(--weight-black);
-    letter-spacing: 0.14em;
+    letter-spacing: var(--stamp-tracking);
     line-height: var(--leading-snug);
     white-space: nowrap;
-    vertical-align: 0.1em;
+    vertical-align: middle;
   }
 
+  .stamp--sm {
+    --stamp-font-size: var(--text-xs);
+    --stamp-padding-y: 0.1em;
+    --stamp-padding-x: 0.55em;
+  }
   .stamp--md {
-    font-size: var(--text-sm);
-    padding: 0.15em 0.7em 0.2em;
+    --stamp-font-size: var(--text-sm);
+    --stamp-padding-y: 0.2em;
+    --stamp-padding-x: 0.7em;
   }
-
+  .stamp--lg {
+    --stamp-font-size: 1.25rem;
+    --stamp-padding-y: 0.25em;
+    --stamp-padding-x: 1.25em;
+  }
+  .stamp--xl {
+    --stamp-font-size: 1.375rem;
+    --stamp-padding-y: 0.25em;
+    --stamp-padding-x: 0.9em;
+  }
   .stamp--tilt {
-    rotate: -3deg;
+    rotate: var(--stamp-angle, -3deg);
+  }
+  .stamp--paper {
+    background: var(--color-white);
+    color: var(--color-ink);
+  }
+  .stamp--corner,
+  .stamp--edge {
+    position: absolute;
+    z-index: 2;
+    right: calc(-1 * var(--stamp-overhang));
+    --stamp-angle: 7deg;
+  }
+  .stamp--corner {
+    top: var(--stamp-corner-top);
+  }
+  .stamp--edge {
+    top: var(--stamp-edge-top);
   }
 </style>
-

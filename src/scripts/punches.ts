@@ -1,3 +1,6 @@
+import { sessions, canBookmark } from '../data/sessions';
+
+const bookmarkableIds = new Set(sessions.filter(canBookmark).map((session) => session.id));
 
 const KEY = 'qracon2026:punched';
 let fallback = new Set<string>();
@@ -7,7 +10,7 @@ export function readPunched(): Set<string> {
     const raw = window.localStorage.getItem(KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     if (Array.isArray(parsed)) {
-      return new Set(parsed.filter((x): x is string => typeof x === 'string'));
+      return new Set(parsed.filter((x): x is string => typeof x === 'string' && bookmarkableIds.has(x)));
     }
   } catch {
   }
