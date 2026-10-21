@@ -6,6 +6,8 @@ import SessionDialog from '../../components/agenda/SessionDialog.astro';
 import FlapText from '../../components/FlapText.astro';
 import { sessions, typeLabels, isListed, phases } from '../../data/sessions';
 import { site } from '../../data/site';
+import { rooms } from '../../data/rooms';
+import Icon from '../../components/Icon.astro';
 import type { SessionType } from '../../types/agenda';
 
 const order: SessionType[] = [
@@ -83,6 +85,24 @@ const filterTypes = order.filter((t) => present.has(t));
           篩選 <span data-filter-summary>全部</span>
         </button>
       </div>
+      <div class="room-controls" data-room-controls>
+        <select data-room-jump aria-label="選擇議程場地">
+          {rooms.map((room, index) => (
+            <option value={index}>{room.short}</option>
+          ))}
+        </select>
+        <div class="room-controls__arrows">
+          <button type="button" data-room-prev aria-label="上一個場地" disabled>
+            <Icon name="arrow-left" size={18} />
+          </button>
+          <span data-room-position aria-live="polite">
+            1／{rooms.length}
+          </span>
+          <button type="button" data-room-next aria-label="下一個場地">
+            <Icon name="arrow-right" size={18} />
+          </button>
+        </div>
+      </div>
       <nav class="phase-route" aria-label="時段">
         <ol role="list">
           {phases.map((p) => (
@@ -130,6 +150,7 @@ const filterTypes = order.filter((t) => present.has(t));
         清除篩選
       </button>
     </div>
+    <p class="agenda__scroll-hint">左右滑動切換場地，點選議程查看詳情。</p>
     <Timetable />
     <SessionDialog />
   </div>
@@ -217,8 +238,15 @@ const filterTypes = order.filter((t) => present.has(t));
     gap: var(--space-5);
     min-width: 0;
   }
-  .mobile-controls {
+  .mobile-controls,
+  .room-controls {
     display: none;
+  }
+  .agenda__scroll-hint {
+    display: none;
+    margin-bottom: -1rem;
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
   }
   .phase-route ol {
     position: relative;
@@ -399,6 +427,51 @@ const filterTypes = order.filter((t) => present.has(t));
     }
     :global(html.js) .agenda-controls:not([data-filters-open]) .tt-tools {
       display: none;
+    }
+    :global(html.js) .room-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: space-between;
+    }
+    .room-controls select {
+      min-width: 0;
+      flex: 1;
+      min-height: 2.75rem;
+      border: var(--rule-thin) solid var(--color-ink);
+      border-radius: var(--radius-chip);
+      background: var(--color-white);
+      padding: 0.5rem;
+      font-size: var(--text-sm);
+      font-weight: var(--weight-bold);
+    }
+    .room-controls__arrows {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .room-controls__arrows button {
+      display: grid;
+      place-items: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      border: var(--rule-thin) solid var(--color-ink);
+      border-radius: var(--radius-chip);
+      background: var(--color-white);
+    }
+    .room-controls__arrows button:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+    .room-controls__arrows span {
+      min-width: 2.75rem;
+      text-align: center;
+      font-family: var(--font-sign);
+      font-weight: var(--weight-sign-heavy);
+      font-size: var(--text-sm);
+    }
+    .agenda__scroll-hint {
+      display: block;
     }
     .mobile-controls__jump {
       display: grid;

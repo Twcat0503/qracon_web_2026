@@ -1,265 +1,330 @@
 ---
-import { sessions, typeLabels, isListed, canBookmark, phases } from '../../data/sessions';
-import { rooms, roomIndex, roomById } from '../../data/rooms';
+import { typeLabels, isListed, canBookmark, phases } from '../../data/sessions';
+import { rooms } from '../../data/rooms';
 import { hhmm, minutesOf, toMinutes } from '../../utils/time';
-import type { Session } from '../../types/agenda';
+import {
+  gridRow,
+  sessionColumns,
+  sessionRoomLabel,
+  orderedSessions,
+  rowTemplate,
+  timeMarkers,
+  formatMinutes,
+  eventDateTime,
+} from '../../utils/timetable';
 import PunchToggle from './PunchToggle.astro';
 import Words from '../Words.astro';
-
-const DAY_START = toMinutes('08:00');
-const DAY_END = toMinutes('17:30');
-const SLOT = 15;
-const ROWS = (DAY_END - DAY_START) / SLOT;
-const FIRST_ROOM_COL = 3;
-
-const row = (minutes: number) => 2 + (minutes - DAY_START) / SLOT;
-const firstRoom = (s: Session) => (s.rooms === 'all' ? -1 : (roomIndex.get(s.rooms[0]!) ?? 0));
-const cols = (s: Session): [number, number] => {
-  if (s.rooms === 'all') return [FIRST_ROOM_COL, FIRST_ROOM_COL + rooms.length];
-  const idx = s.rooms.map((r) => roomIndex.get(r) ?? 0);
-  return [FIRST_ROOM_COL + Math.min(...idx), FIRST_ROOM_COL + Math.max(...idx) + 1];
-};
-const roomLabel = (s: Session) =>
-  s.rooms === 'all' ? '全體' : s.rooms.map((r) => roomById(r).name).join('、');
-
-const sorted = [...sessions].sort(
-  (a, b) => minutesOf(a.start) - minutesOf(b.start) || firstRoom(a) - firstRoom(b),
-);
-
-const isBandRow = (i: number) => {
-  const t0 = DAY_START + i * SLOT;
-  const covering = sessions.filter((s) => minutesOf(s.start) < t0 + SLOT && minutesOf(s.end) > t0);
-  return covering.length > 0 && covering.every((s) => s.rooms === 'all');
-};
-const rowRuns: { band: boolean; n: number }[] = [];
-for (let i = 0; i < ROWS; i++) {
-  const band = isBandRow(i);
-  const last = rowRuns.at(-1);
-  if (last && last.band === band) last.n += 1;
-  else rowRuns.push({ band, n: 1 });
-}
-const rowTemplate = rowRuns
-  .map((r) => `repeat(${r.n}, var(${r.band ? '--slot-band' : '--slot'}))`)
-  .join(' ');
-
-const startTimes = [...new Set(sorted.map((s) => minutesOf(s.start)))];
-const marks: number[] = [];
-for (let m = DAY_START; m < DAY_END; m += 30) marks.push(m);
-
-const groups = startTimes.map((minutes) => ({
-  minutes,
-  phase: phases.find((phase) => toMinutes(phase.from) === minutes),
-  sessions: sorted.filter((session) => minutesOf(session.start) === minutes),
-}));
-
-const clock = (m: number) =>
-  `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-const iso = (m: number) => `2026-12-05T${clock(m)}:00+08:00`;
-const tall = (s: Session) => minutesOf(s.end) - minutesOf(s.start) >= 150 && s.rooms !== 'all';
-const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
 ---
 
 <div
-  class="tt"
+  class="timetable-board"
   id="timetable"
+  data-timetable-board
   style={`--room-count: ${rooms.length}; --row-template: ${rowTemplate}`}
 >
-  {rooms.map((room, i) => (
-    <div
-      class="tt__room"
-      data-col={FIRST_ROOM_COL + i}
-      style={`--c0: ${FIRST_ROOM_COL + i}`}
-      aria-hidden="true"
-    >
-      {room.short}
+  <p class="visually-hidden" id="timetable-help">
+    左側為時間，右側場地可左右滑動。點選議程開啟詳情，虛線圈圈可收藏場次。
+  </p>
+  <div class="tt-rail">
+    <div class="tt-rail__head" aria-hidden="true">
+      時間
     </div>
-  ))}
-  {marks.map((m) => (
-    <div class="tt__mark" data-row={row(m)} style={`--r0: ${row(m)}`} aria-hidden="true">
-      <time datetime={iso(m)}>{clock(m)}</time>
-    </div>
-  ))}
-  {marks.map((m) => (
-    <div class="tt__rule" style={`--r0: ${row(m)}`} aria-hidden="true" />
-  ))}
-  {groups.map((group) => (
-    <>
-      {group.phase && (
-        <h2
-          class="tt__phase"
-          id={group.phase.id}
-          data-phase-start={toMinutes(group.phase.from)}
-          data-phase-end={toMinutes(group.phase.to)}
-          style={`--r0: ${row(toMinutes(group.phase.from))}; --r1: ${row(toMinutes(group.phase.to))}`}
-        >
-          <span class="tt__phase-name">{group.phase.label}</span>
-          <span class="tt__phase-time">
-            {group.phase.from}–{group.phase.to}
-          </span>
-        </h2>
-      )}
-      <div class="tt__timegroup">
-        <div class="tt__group" data-group-time={group.minutes} aria-hidden="true">
-          {clock(group.minutes)}
-        </div>
-        {group.sessions.map((s) => {
-          const [c0, c1] = cols(s);
-          const start = minutesOf(s.start);
-          const end = minutesOf(s.end);
-          const listed = isListed(s);
-          return (
-            <article
-              class:list={[
-                's',
-                `s--${s.type}`,
-                {
-                  's--all': s.rooms === 'all',
-                  's--checkin': s.id === 'check-in',
-                  's--tall': tall(s),
-                  's--short': short(s),
-                },
-              ]}
-              data-session
-              data-id={s.id}
-              data-type={s.type}
-              data-listed={String(listed)}
-              data-start={start}
-              data-end={end}
-              data-rooms={roomLabel(s)}
-              data-c0={c0}
-              data-c1={c1}
-              data-r0={row(start)}
-              data-r1={row(end)}
-              style={`--r0: ${row(start)}; --r1: ${row(end)}; --c0: ${c0}; --c1: ${c1}`}
-              aria-labelledby={`s-${s.id}`}
-            >
-              {listed && s.rooms !== 'all' && <p class="s__type">{typeLabels[s.type]}</p>}
-              <h3 class="s__title" id={`s-${s.id}`}>
-                {listed ? (
-                  <a href={`/agenda/${s.id}/`}>
-                    <Words text={s.title} />
-                  </a>
-                ) : (
-                  <Words text={s.title} />
-                )}
-              </h3>
-              <p class="s__meta">
-                <time datetime={s.start}>{hhmm(s.start)}</time>
-                <span aria-hidden="true">–</span>
-                <span class="visually-hidden">到</span>
-                <time datetime={s.end}>{hhmm(s.end)}</time>
-                <span class="s__room">{roomLabel(s)}</span>
-              </p>
-              <p class="s__status" data-status hidden />
-              {canBookmark(s) && <PunchToggle id={s.id} title={s.title} />}
-            </article>
-          );
-        })}
+    {timeMarkers.map((minutes) => (
+      <div
+        class="tt__mark"
+        data-row={gridRow(minutes)}
+        style={`--r0: ${gridRow(minutes)}`}
+        aria-hidden="true"
+      >
+        <time datetime={eventDateTime(minutes)}>{formatMinutes(minutes)}</time>
       </div>
-    </>
-  ))}
+    ))}
+    {phases.map((phase) => (
+      <h2
+        class="tt__phase"
+        id={phase.id}
+        data-phase-start={toMinutes(phase.from)}
+        data-phase-end={toMinutes(phase.to)}
+        style={`--r0: ${gridRow(toMinutes(phase.from))}; --r1: ${gridRow(toMinutes(phase.to))}`}
+      >
+        {phase.label}
+      </h2>
+    ))}
+  </div>
+  <div
+    class="tt-scroll"
+    data-room-track
+    tabindex="0"
+    role="region"
+    aria-label="各場地議程表，可左右滑動"
+    aria-describedby="timetable-help"
+  >
+    <div class="tt">
+      {rooms.map((room, index) => (
+        <div
+          class="tt__room"
+          data-col={index + 1}
+          data-room-id={room.id}
+          style={`--c0: ${index + 1}`}
+        >
+          {room.short}
+        </div>
+      ))}
+      {timeMarkers.map((minutes) => (
+        <div class="tt__rule" style={`--r0: ${gridRow(minutes)}`} aria-hidden="true" />
+      ))}
+      {orderedSessions.map((session) => {
+        const [c0, c1] = sessionColumns(session);
+        const start = minutesOf(session.start);
+        const end = minutesOf(session.end);
+        const listed = isListed(session);
+        const all = session.rooms === 'all';
+        const wide = !all && session.rooms.length > 1;
+        return (
+          <article
+            class:list={[
+              's',
+              `s--${session.type}`,
+              {
+                's--all': all,
+                's--wide': wide,
+                's--short': end - start <= 30,
+                's--long': end - start >= 150 && !all,
+              },
+            ]}
+            data-session
+            data-id={session.id}
+            data-type={session.type}
+            data-listed={String(listed)}
+            data-start={start}
+            data-end={end}
+            data-rooms={sessionRoomLabel(session)}
+            data-c0={c0}
+            data-c1={c1}
+            data-r0={gridRow(start)}
+            data-r1={gridRow(end)}
+            style={`--r0: ${gridRow(start)}; --r1: ${gridRow(end)}; --c0: ${c0}; --c1: ${c1}`}
+            aria-labelledby={`s-${session.id}`}
+            aria-description={`${hhmm(session.start)}–${hhmm(session.end)}，${sessionRoomLabel(session)}`}
+          >
+            {listed && !all && (
+              <div class="s__head">
+                <p class="s__type">{typeLabels[session.type]}</p>
+                <p class="s__status" data-status hidden />
+                {canBookmark(session) && <PunchToggle id={session.id} title={session.title} />}
+              </div>
+            )}
+            <h3 class="s__title" id={`s-${session.id}`}>
+              {listed ? (
+                <a href={`/agenda/${session.id}/`}>
+                  <Words text={session.title} />
+                  <span class="s__info" aria-hidden="true">
+                    i
+                  </span>
+                </a>
+              ) : (
+                <Words text={session.title} />
+              )}
+            </h3>
+            <p class="s__meta">
+              <time datetime={session.start}>{hhmm(session.start)}</time>
+              <span aria-hidden="true">–</span>
+              <span class="visually-hidden">到</span>
+              <time datetime={session.end}>{hhmm(session.end)}</time>
+            </p>
+            {all && <p class="s__status" data-status hidden />}
+          </article>
+        );
+      })}
+    </div>
+  </div>
 </div>
 
 <style>
-  .tt {
-    border-top: var(--rule-heavy) solid var(--color-ink);
-  }
-
-  .tt__room,
-  .tt__mark,
-  .tt__rule {
-    display: none;
-  }
-
-  .tt__phase {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3);
-    margin-top: var(--space-7);
-    padding: var(--space-3) var(--space-4);
-    background: var(--color-ink);
-    color: var(--color-white);
-    font-size: var(--text-xl);
-    scroll-margin-top: calc(var(--agenda-controls-height, 0px) + var(--space-4));
-  }
-
-  .tt__phase:first-of-type {
-    margin-top: 0;
-  }
-
-  .tt__phase-time {
-    font-family: var(--font-sign);
-    font-weight: var(--weight-sign);
-    font-size: var(--text-base);
-    letter-spacing: 0.06em;
-  }
-
-  .tt__group {
-    position: sticky;
-    top: var(--agenda-controls-height, 0px);
-    z-index: 2;
-    padding: var(--space-3) 0 var(--space-2);
-    border-bottom: var(--rule-thin) solid var(--color-ink);
-    background: var(--color-paper);
-    font-family: var(--font-sign);
-    font-weight: var(--weight-sign-heavy);
-    font-size: var(--text-2xl);
-    line-height: 1;
-    letter-spacing: 0.02em;
-  }
-
-  .s {
+  .timetable-board {
+    --head: 3.75rem;
+    --slot: 2.75rem;
+    --slot-band: 1.5rem;
+    --rail-width: 5.5rem;
+    --rail-gap: 0.75rem;
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: var(--space-3);
-    padding: var(--space-4) 0;
-    border-bottom: var(--rule-hair) solid var(--color-rule-fine);
+    grid-template-columns: var(--rail-width) minmax(0, 1fr);
+    gap: var(--rail-gap);
+    min-width: 0;
+    scroll-margin-top: calc(var(--agenda-controls-height, 0px) + 1rem);
   }
-
-  .s__type,
-  .s__title,
-  .s__meta,
-  .s__status {
-    grid-column: 1;
+  .tt-rail,
+  .tt {
+    display: grid;
+    grid-template-rows: var(--head) var(--row-template);
   }
-
-  .s :global(.punch) {
-    position: relative;
-    z-index: 1;
-    grid-column: 2;
-    grid-row: 1 / span 3;
-    align-self: start;
+  .tt-rail {
+    grid-template-columns: 2rem minmax(0, 1fr);
+    border-block: 2px solid transparent;
   }
-
-  .s__type {
-    color: var(--color-ink-soft);
+  .tt-rail__head {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: grid;
+    place-items: center;
+    background: var(--color-ink);
+    color: var(--color-white);
     font-size: var(--text-xs);
     font-weight: var(--weight-bold);
-    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--color-on-ink-soft);
   }
-
-  .s__title {
-    font-size: var(--text-lg);
+  .tt__mark {
+    grid-column: 2;
+    grid-row: var(--r0) / span 2;
+    display: grid;
+    place-items: center;
+    margin-block: 1px;
+    border-radius: var(--radius-chip);
+    background: var(--color-ink);
+    color: var(--color-white);
+    font-family: var(--font-sign);
+    font-weight: var(--weight-sign);
+    font-size: var(--text-sm);
+    transition:
+      background-color var(--dur-fast),
+      color var(--dur-fast);
+  }
+  .tt__mark[data-hot] {
+    background: var(--color-white);
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+  .tt__phase {
+    grid-column: 1;
+    grid-row: var(--r0) / var(--r1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding-block: 0.75rem;
+    writing-mode: vertical-rl;
+    font-size: var(--text-xs);
+    letter-spacing: 0.12em;
+    background: var(--color-ink);
+    color: var(--color-white);
+    border-top: 1px solid var(--color-on-ink-rule);
+    scroll-margin-top: calc(var(--agenda-controls-height, 0px) + 1rem);
+  }
+  .tt__phase[data-empty] {
+    background: var(--color-paper-deep);
+    color: var(--color-ink-soft);
+  }
+  .tt-scroll {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    container-type: inline-size;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink) var(--color-paper);
+    border: 2px solid var(--color-ink);
+    -webkit-overflow-scrolling: touch;
+  }
+  .tt-scroll:focus-visible {
+    outline-offset: 3px;
+  }
+  .tt {
+    position: relative;
+    grid-template-columns: repeat(var(--room-count), minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    background: var(--color-white);
+  }
+  .tt__room {
+    grid-row: 1;
+    grid-column: var(--c0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    background: var(--color-ink);
+    color: var(--color-white);
+    border-left: 1px solid var(--color-on-ink-rule);
+    border-bottom: 1px solid var(--color-on-ink-soft);
+    font-size: var(--text-sm);
     font-weight: var(--weight-bold);
-    line-height: var(--leading-snug);
+    line-height: 1.4;
+    text-align: center;
+    scroll-snap-align: start;
   }
-
+  .tt__room[data-hot] {
+    background: var(--color-white);
+    color: var(--color-ink);
+  }
+  .tt__rule {
+    grid-column: 1 / -1;
+    grid-row: var(--r0);
+    border-top: 1px solid var(--color-rule-fine);
+    pointer-events: none;
+  }
+  .s {
+    position: relative;
+    z-index: 1;
+    grid-column: var(--c0) / var(--c1);
+    grid-row: var(--r0) / var(--r1);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 0.35rem;
+    min-width: 0;
+    min-height: 0;
+    margin: 0 0 1px 1px;
+    padding: 0.5rem;
+    border: 1px solid var(--color-ink);
+    background: var(--color-white);
+    color: var(--color-ink);
+    transition:
+      background-color var(--dur-fast),
+      color var(--dur-fast);
+  }
+  .s__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem;
+    min-width: 0;
+    min-height: 1.5rem;
+  }
+  .s__type,
+  .s__status {
+    font-size: 0.75rem;
+    font-weight: var(--weight-bold);
+    line-height: 1.4;
+    color: var(--color-ink-soft);
+  }
+  .s__head:has(.s__status:not([hidden])) .s__type {
+    display: none;
+  }
+  .s :global(.punch) {
+    --punch-size: 1.5rem;
+    position: relative;
+    z-index: 2;
+    flex: none;
+  }
+  .s__title {
+    align-self: center;
+    font-size: var(--text-sm);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
   .s__title a {
     text-decoration: none;
   }
-
+  .s__title a:hover {
+    text-decoration: none;
+  }
   .s__title a::after {
     content: '';
     position: absolute;
     inset: 0;
   }
-
-  .s__title a:hover {
-    text-decoration: none;
-  }
-
   .s__title a:focus-visible {
     outline: none;
   }
@@ -267,562 +332,255 @@ const short = (s: Session) => minutesOf(s.end) - minutesOf(s.start) <= 30;
     outline: 3px solid var(--color-focus);
     outline-offset: -3px;
   }
-
+  .s__info {
+    display: inline-grid;
+    place-items: center;
+    width: 0.9rem;
+    height: 0.9rem;
+    margin-left: 0.4rem;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font-family: serif;
+    font-size: 0.65rem;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: middle;
+  }
   .s__meta {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 0.2em;
-    margin-top: var(--space-1);
+    align-self: end;
+    justify-content: center;
+    gap: 0.15rem;
     color: var(--color-ink-soft);
-    font-size: var(--text-sm);
-  }
-
-  .s__meta time {
     font-family: var(--font-sign);
-    font-weight: var(--weight-sign);
-    font-size: var(--text-md);
-    color: var(--color-ink);
-  }
-
-  .s__room::before {
-    content: '・';
-  }
-
-  .s__status {
-    justify-self: start;
-    margin-top: var(--space-2);
-    padding: 0.05em 0.5em;
-    border: var(--rule-mid) solid currentColor;
-    border-radius: var(--radius-chip);
     font-size: var(--text-xs);
-    font-weight: var(--weight-black);
-    letter-spacing: 0.1em;
+    font-weight: var(--weight-sign);
+    line-height: 1.4;
   }
-
-  .s--checkin .s__meta {
+  .s--short {
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0.25rem;
+  }
+  .s--short .s__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .s--short .s__meta {
     display: none;
   }
-
-  .s--break {
-    color: var(--color-ink-soft);
-  }
-
-  .s--break .s__title {
-    font-size: var(--text-md);
-    font-weight: var(--weight-medium);
-  }
-
-  @media (max-width: 71.99rem) {
-    .tt__phase[data-first-phase] {
-      margin-top: 0;
-    }
-    .s[data-dim],
-    .tt__phase[data-empty],
-    .tt__group[data-empty] {
-      display: none;
-    }
-  }
-
-  .s[data-state='now'] {
-    margin-inline: calc(var(--space-3) * -1);
-    padding-inline: var(--space-3);
+  .s--all {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 0;
+    overflow: visible;
     background: var(--color-ink);
+    color: var(--color-white);
+    box-shadow: inset 0 1px 0 var(--color-on-ink-soft);
+    --color-focus: var(--color-white);
+  }
+  .s--all .s__title {
+    position: sticky;
+    left: 0;
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100cqw;
+    max-width: 100%;
+    height: 100%;
+    padding-inline: 1rem;
+    font-size: var(--text-lg);
+    letter-spacing: 0.12em;
+    text-align: center;
+  }
+  .s--all .s__meta {
+    display: none;
+  }
+  .s--all .s__status {
+    position: sticky;
+    left: 0.5rem;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    align-self: center;
+    width: fit-content;
+    margin-left: 0.5rem;
+    color: var(--color-on-ink-soft);
+  }
+  .s--break:not(.s--all) {
+    grid-template-rows: 3.5rem minmax(0, 1fr) 3.5rem;
+    gap: 0.5rem;
+    padding-block: 0.75rem;
+    background-color: var(--color-paper);
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent 0 0.4rem,
+      var(--color-rule-fine) 0.4rem calc(0.4rem + 1px)
+    );
+  }
+  .s--break:not(.s--all) .s__title {
+    grid-row: 2;
+    justify-self: center;
+    align-self: center;
+    padding: 0;
+    background: transparent;
+    text-align: center;
+  }
+  .s--break:not(.s--all) .s__title :global(.words) {
+    padding: 0.15em 0.5em;
+    background: var(--color-paper);
+  }
+  .s--break:not(.s--all) .s__meta {
+    grid-row: 3;
+    background: var(--color-paper);
+    padding: 0.1em 0.3em;
+    justify-self: center;
+  }
+  .s--wide .s__head,
+  .s--wide .s__title {
+    position: sticky;
+    left: 0.5rem;
+    width: calc(100cqw - 1rem);
+    max-width: 100%;
+  }
+  .s--wide:not(.s--break) .s__meta {
+    position: sticky;
+    left: 0.5rem;
+    width: calc(100cqw - 1rem);
+    max-width: 100%;
+  }
+  .s[data-dim] {
+    background: #f3f3f3;
+    background-image: none;
+    color: #929292;
+    border-color: #d0d0d0;
+  }
+  .s[data-dim] :is(.s__type, .s__meta, .s__status) {
+    color: #929292;
+  }
+  .s[data-dim] :global(.punch) {
+    opacity: 0.4;
+  }
+  .s--all[data-dim] {
+    background: #e3e3e3;
+    color: #777;
+  }
+  .s[data-hot],
+  .s[data-state='now'] {
+    background: var(--color-ink);
+    background-image: none;
     color: var(--color-white);
     --color-focus: var(--color-white);
     --chad-bg: var(--color-ink);
   }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .tt__phase:global(.is-arriving) {
-      animation: phase-arrive var(--dur-slow) var(--ease-out);
-    }
-
-    @keyframes phase-arrive {
-      from {
-        background: var(--color-white);
-        color: var(--color-ink);
-      }
-    }
-  }
-
-  .s[data-state='now'] .s__meta,
-  .s[data-state='now'] .s__type,
-  .s[data-state='now'] .s__meta time {
+  .s[data-hot] :is(.s__type, .s__meta, .s__status),
+  .s[data-state='now'] :is(.s__type, .s__meta, .s__status) {
     color: var(--color-on-ink-soft);
   }
-
+  .s--break[data-hot] .s__title :global(.words),
+  .s--break[data-state='now'] .s__title :global(.words) {
+    background: var(--color-ink);
+  }
+  .s[data-hot] .s__title,
+  .s[data-hot] .s__meta,
+  .s[data-state='now'] .s__title,
+  .s[data-state='now'] .s__meta {
+    background-color: var(--color-ink);
+  }
+  .s--all[data-hot] {
+    background: var(--color-white);
+    color: var(--color-ink);
+    --color-focus: var(--color-ink);
+  }
+  .s--all[data-hot] .s__title {
+    background: var(--color-white);
+  }
   .s[data-state='past'] {
     color: var(--color-ink-muted);
   }
-
-  .s[data-state='past'] .s__meta time {
-    color: inherit;
-  }
-
   @media (min-width: 72rem) {
-    .tt__timegroup {
-      display: contents;
+    .s--long:not(.s--break) {
+      grid-template-rows: 4.5rem minmax(0, 1fr) 4.5rem;
     }
-    .tt {
-      display: grid;
-      grid-template-columns:
-        2.25rem 3.75rem
-        repeat(var(--room-count), minmax(0, 1fr));
-      --head: 2.75rem;
-      --slot: 2.375rem;
-      --slot-band: 1.5rem;
-      grid-template-rows: var(--head) var(--row-template);
-      border: var(--rule-heavy) solid var(--color-ink);
-      background-color: var(--color-white);
-    }
-
-    .tt__rule {
-      display: block;
-      grid-column: 2 / -1;
-      grid-row: var(--r0);
-      border-top: var(--rule-hair) solid var(--color-rule-fine);
-      pointer-events: none;
-    }
-
-    .tt__room {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: sticky;
-      top: 0;
-      z-index: 3;
-      grid-row: 1;
-      grid-column: var(--c0);
-      padding: var(--space-1) var(--space-2);
-      background: var(--color-ink);
-      color: var(--color-white);
-      border-left: var(--rule-hair) solid var(--color-on-ink-rule);
-      font-size: var(--text-sm);
-      font-weight: var(--weight-bold);
-      text-align: center;
-      line-height: var(--leading-tight);
-      transition:
-        background-color var(--dur-instant) var(--ease-out),
-        color var(--dur-instant) var(--ease-out);
-    }
-
-    .tt__room[data-hot] {
-      background: var(--color-white);
-      color: var(--color-ink);
-    }
-
-    .tt::before {
-      content: '';
-      position: sticky;
-      top: 0;
-      z-index: 3;
-      grid-row: 1;
-      grid-column: 1 / 3;
-      background: var(--color-ink);
-    }
-
-    .tt__mark {
-      grid-column: 2;
-      grid-row: var(--r0) / span 2;
-      border-right: var(--rule-thin) solid var(--color-ink);
-      font-family: var(--font-sign);
-      font-weight: var(--weight-sign);
-      font-size: var(--text-sm);
-      line-height: 1.2;
-      transition:
-        background-color var(--dur-instant) var(--ease-out),
-        color var(--dur-instant) var(--ease-out);
-    }
-
-    .tt__mark[data-hot] {
-      background: var(--color-ink);
-      color: var(--color-white);
-      font-weight: var(--weight-sign-heavy);
-    }
-
-    .tt__group {
-      display: none;
-    }
-
-    .tt__phase {
-      grid-column: 1;
-      grid-row: var(--r0) / var(--r1);
-      margin: 0;
-      padding: var(--space-2) 0;
-      justify-content: flex-start;
-      align-items: center;
-      gap: var(--space-2);
-      border-top: var(--rule-hair) solid var(--color-on-ink-rule);
-      writing-mode: vertical-rl;
-      font-size: var(--text-sm);
-
-      letter-spacing: 0.12em;
-    }
-
-    .tt__phase-time {
-      display: none;
-    }
-
-    .s {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-rows: auto auto 1fr;
-      align-content: start;
-      column-gap: var(--space-1);
-      grid-row: var(--r0) / var(--r1);
-      grid-column: var(--c0) / var(--c1);
-      margin: 0 0 var(--rule-hair) var(--rule-hair);
-      padding: 0.3rem 0.3rem 0.35rem 0.5rem;
-      border: 0;
-      background: var(--color-white);
-      outline: var(--rule-thin) solid var(--color-ink);
-      outline-offset: calc(var(--rule-thin) * -1);
-      overflow: hidden;
-      z-index: 1;
-      transition:
-        background-color var(--dur-fast) var(--ease-out),
-        color var(--dur-fast) var(--ease-out);
-    }
-
-    .s :global(.punch) {
-      --punch-size: 1.5rem;
-      grid-column: 2;
-      grid-row: 1;
-      align-self: center;
-    }
-
-    .s__type,
-    .s__status {
-      grid-column: 1;
-      grid-row: 1;
-      align-self: center;
-      min-height: 1.5rem;
-      display: flex;
-      align-items: center;
-    }
-
-    .s__type {
-      font-size: var(--text-xs);
-      line-height: 1.3;
-    }
-
-    .s:has(.s__status:not([hidden])) .s__type {
-      display: none;
-    }
-
-    .s__title {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      font-size: var(--text-sm);
-      line-height: 1.35;
-    }
-
-    .s--break .s__title {
-      grid-row: 1;
-    }
-
-    .s__meta {
-      grid-column: 1 / -1;
-      grid-row: 3;
-      align-self: end;
-      font-size: var(--text-xs);
-    }
-
-    .s--short .s__meta {
-      display: none;
-    }
-
-    .s__meta time {
-      font-size: var(--text-xs);
-    }
-
-    .s__room {
-      display: none;
-    }
-
-    .s__status {
-      justify-self: start;
+    .s--long:not(.s--break) .s__title {
+      justify-self: center;
       min-height: 0;
-      margin-top: 0;
-      font-size: var(--text-xs);
-    }
-
-    .s--all {
-      outline-color: var(--color-ink);
-    }
-
-    .s--all .s__meta {
-      margin: 0;
-      color: var(--color-on-ink-soft);
-    }
-
-    .s--all .s__meta time {
-      color: inherit;
-    }
-
-    .s--all .s__room {
-      display: none;
-    }
-
-    .s--break:not(.s--all) {
-      background-color: var(--color-paper);
-      background-image: repeating-linear-gradient(
-        -45deg,
-        transparent 0 0.4rem,
-        var(--color-rule-fine) 0.4rem calc(0.4rem + var(--rule-hair))
-      );
-      color: var(--color-ink);
-    }
-
-    .s--break .s__title {
-      font-size: var(--text-sm);
-      font-weight: var(--weight-bold);
-    }
-
-    .s--tall {
-      flex-direction: column;
-    }
-
-    .s--tall .s__title {
+      max-height: 100%;
+      max-width: 100%;
       writing-mode: vertical-rl;
       text-orientation: upright;
       font-size: var(--text-md);
       letter-spacing: 0.2em;
       line-height: 1.2;
     }
-
-    .s--tall .s__title :global(.words) {
+    .s--long .s__title :global(.words) {
       word-break: normal;
     }
-
-    .s--tall .s__meta {
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .s[data-dim] {
-      color: #969696;
-      background-color: #f3f3f3;
-      background-image: none;
-      outline-color: #d0d0d0;
-    }
-    .s[data-dim] .s__type,
-    .s[data-dim] .s__meta,
-    .s[data-dim] .s__meta time {
-      color: #969696;
-    }
-    .s[data-dim] :global(.punch) {
-      opacity: 0.4;
-    }
-    .s--all[data-dim] {
-      background: #e3e3e3;
-      color: #777;
-      --chad-bg: #e3e3e3;
-    }
-
-    .s[data-state='now'] {
-      margin: 0 0 var(--rule-hair) var(--rule-hair);
-      padding-inline: 0.5rem 1.9rem;
-      outline-width: var(--rule-heavy);
-      outline-offset: calc(var(--rule-heavy) * -1);
-      z-index: 1;
-    }
-
-    .s--all[data-state='now'] {
-      padding-inline: var(--space-4);
-    }
-  }
-  .s[data-hot] {
-    background: var(--color-ink);
-    color: var(--color-white);
-    --color-focus: var(--color-white);
-    --chad-bg: var(--color-ink);
-  }
-  .s[data-hot] .s__meta,
-  .s[data-hot] .s__type,
-  .s[data-hot] .s__meta time {
-    color: var(--color-on-ink-soft);
-  }
-  @media (min-width: 72rem) {
-    .tt__rule {
-      z-index: 0;
-    }
-    .s[data-hot] {
-      z-index: 2;
-      outline-color: var(--color-ink);
-      outline-width: 2px;
-      background-image: none;
-    }
-    .s--tall .s__type {
-      writing-mode: horizontal-tb;
-      text-orientation: mixed;
-    }
-    .s--all {
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      padding: 0.5rem 1rem;
-      background: var(--color-ink);
-      color: var(--color-white);
-      --color-focus: var(--color-white);
-      --chad-bg: var(--color-ink);
-    }
-    .s--all .s__title {
-      font-size: var(--text-lg);
-    }
-    .s--all .s__meta {
+    .s--long .s__info {
       display: none;
     }
-    .s--all .s__status {
-      min-height: 0;
+  }
+  @media (max-width: 71.99rem) {
+    .timetable-board {
+      --rail-width: 3rem;
+      --rail-gap: 0.5rem;
     }
-    .s--checkin {
-      gap: 1.5rem;
-    }
-    .s--checkin .s__meta {
-      display: none;
-    }
-    .s--checkin .s__meta time {
-      color: inherit;
-    }
-    .s--all[data-hot] {
-      background: var(--color-white);
-      color: var(--color-ink);
-      --color-focus: var(--color-ink);
-      --chad-bg: var(--color-white);
-    }
-    .s--all[data-hot] .s__meta,
-    .s--all[data-hot] .s__meta time {
-      color: var(--color-ink-soft);
+    .tt-rail {
+      grid-template-columns: minmax(0, 1fr);
     }
     .tt__mark {
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      grid-column: 1;
+    }
+    .tt__phase {
+      grid-column: 1;
+      grid-row: var(--r0);
+      align-self: start;
+      width: 1px;
+      height: 1px;
       padding: 0;
-      text-align: center;
+      overflow: hidden;
+      clip-path: inset(50%);
+      border: 0;
     }
-    .s--tall {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-rows: 4.5rem minmax(0, 1fr) 4.5rem;
-      align-items: start;
-      padding: 0.5rem;
-      gap: 0.75rem 0.25rem;
+    .tt {
+      --column-width: 12rem;
+      width: calc(var(--room-count) * var(--column-width));
     }
-    .s--tall .s__type {
-      grid-column: 1;
-      grid-row: 1;
-      justify-self: start;
-      align-self: start;
-      min-height: 1.5rem;
-      display: flex;
-      align-items: center;
-      text-align: left;
-      white-space: nowrap;
-      font-size: 0.75rem;
+    .tt__room {
+      font-size: 1rem;
     }
-    .s--tall :global(.punch) {
-      grid-column: 2;
-      grid-row: 1;
-      align-self: start;
-      order: 0;
+    .s {
+      padding: 0.5rem 0.65rem;
     }
-    .s--tall .s__title {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      justify-self: center;
-      align-self: center;
-      margin-top: 0;
-      min-height: 0;
-      max-height: 100%;
-      max-width: 100%;
-    }
-    .s--tall .s__meta {
-      grid-column: 1 / -1;
-      grid-row: 3;
-      align-self: end;
-      justify-self: center;
-      margin-top: 0;
-    }
-    .tt__room,
-    .tt::before {
-      border-bottom: 1px solid #b3b3b3;
+    .s__title {
+      font-size: 0.9375rem;
     }
     .s--all {
-      box-shadow: inset 0 1px 0 #b3b3b3;
+      padding: 0;
     }
     .s--all .s__title {
-      margin: 0;
-      letter-spacing: 0.12em;
-      text-align: center;
+      font-size: 1rem;
     }
-    .s--all {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto 1.5rem minmax(0, 1fr);
-      grid-template-rows: 1fr;
-      column-gap: 0.75rem;
+    .s--long {
+      grid-template-rows: auto minmax(0, 1fr) auto;
     }
-    .s--all .s__title {
-      grid-column: 2;
-      grid-row: 1;
+  }
+  @media (max-width: 47.99rem) {
+    .tt {
+      --column-width: calc(100cqw - 1.5rem);
     }
-    .s--all :global(.punch) {
-      position: relative;
-      right: auto;
-      top: auto;
-      translate: none;
-      grid-column: 3;
-      grid-row: 1;
-      align-self: center;
+    .s__title {
+      font-size: 1rem;
     }
-    .s--checkin .s__title,
-    .s--all:not(:has(.punch)) .s__title {
-      grid-column: 2 / 4;
-    }
-    .s--all .s__status {
-      position: absolute;
-      left: 1rem;
-      top: 50%;
-      translate: 0 -50%;
-    }
-    .s--break:not(.s--all) {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: 3.5rem minmax(0, 1fr) 3.5rem;
-      gap: 0.5rem;
-      padding: 0.75rem;
-    }
-
-    .s--break:not(.s--all) .s__title {
-      grid-column: 1;
-      grid-row: 2;
-      place-self: center;
-      margin: 0;
-      padding: 0.15em 0.5em;
-      background: var(--color-paper);
-      writing-mode: horizontal-tb;
-      text-align: center;
-      letter-spacing: 0.06em;
-      line-height: 1.5;
-    }
-
-    .s--break:not(.s--all) .s__meta {
-      grid-column: 1;
-      grid-row: 3;
-      align-self: end;
-      justify-self: center;
-      flex-direction: row;
-      justify-content: center;
-      margin: 0;
-      padding: 0.1em 0.3em;
-      background: var(--color-paper);
-    }
-
-    .s--break:not(.s--all)[data-hot] .s__title,
-    .s--break:not(.s--all)[data-hot] .s__meta {
-      background: var(--color-ink);
+    .s--short .s__title {
+      font-size: 0.9375rem;
     }
   }
 </style>
