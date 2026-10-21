@@ -39,7 +39,17 @@ export function initRoomScroll() {
   next.addEventListener('click', () => go(current + 1));
   jump.addEventListener('change', () => go(Number(jump.value)));
   track.addEventListener('scroll', update, { passive: true });
-  new ResizeObserver(update).observe(track);
+  // Keep the selected room when rotation changes the width of each column.
+  let measuredColumnWidth = columnWidth();
+  new ResizeObserver(() => {
+    const width = columnWidth();
+    if (!width || !track.clientWidth) return;
+    if (measuredColumnWidth && Math.abs(width - measuredColumnWidth) > 0.5) {
+      track.scrollTo({ left: current * width, behavior: 'instant' });
+    }
+    measuredColumnWidth = width;
+    update();
+  }).observe(track);
   document.addEventListener('agenda:filters-changed', () => {
     const matches = [
       ...board.querySelectorAll<HTMLElement>('[data-session][data-listed="true"]:not([data-dim])'),

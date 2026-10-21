@@ -141,6 +141,9 @@ const filterTypes = order.filter((t) => present.has(t));
             清除篩選
           </button>
           <p class="tt-tools__count" aria-live="polite" data-tt-count></p>
+          <button type="button" class="tt-tools__done" data-filter-done>
+            完成篩選
+          </button>
         </div>
       </div>
     </div>
@@ -406,6 +409,9 @@ const filterTypes = order.filter((t) => present.has(t));
     padding: var(--space-5);
     border: var(--rule-mid) dashed var(--color-ink);
   }
+  .tt-tools__done {
+    display: none;
+  }
   @media (max-width: 71.99rem) {
     :global(html.js) .agenda-controls {
       position: sticky;
@@ -442,7 +448,7 @@ const filterTypes = order.filter((t) => present.has(t));
       border-radius: var(--radius-chip);
       background: var(--color-white);
       padding: 0.5rem;
-      font-size: var(--text-sm);
+      font-size: 1rem;
       font-weight: var(--weight-bold);
     }
     .room-controls__arrows {
@@ -488,7 +494,7 @@ const filterTypes = order.filter((t) => present.has(t));
       border: var(--rule-thin) solid var(--color-ink);
       border-radius: var(--radius-chip);
       background: var(--color-white);
-      font-size: var(--text-sm);
+      font-size: 1rem;
     }
     .mobile-controls__filter {
       min-height: 2.75rem;
@@ -511,7 +517,7 @@ const filterTypes = order.filter((t) => present.has(t));
     }
     .tt-tools {
       grid-template-columns: 1fr;
-      max-height: min(60svh, 26rem);
+      max-height: min(26rem, max(8rem, calc(100svh - 11rem)));
       overflow-y: auto;
       overscroll-behavior: contain;
       padding: var(--space-4);
@@ -529,9 +535,42 @@ const filterTypes = order.filter((t) => present.has(t));
     .tt-tools__count {
       text-align: left;
     }
+    .tt-tools__done {
+      display: block;
+      grid-column: 1 / -1;
+      min-height: 2.75rem;
+      border: var(--rule-thin) solid var(--color-ink);
+      border-radius: var(--radius-chip);
+      background: var(--color-ink);
+      color: var(--color-white);
+      font-size: 1rem;
+      font-weight: var(--weight-bold);
+    }
     .phase-route ol {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    }
+  }
+  @media (max-width: 71.99rem) and (min-width: 36rem) and (max-height: 32rem) {
+    :global(html.js) .agenda-controls {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: end;
+      gap: var(--space-2) var(--space-3);
+      padding-block: var(--space-2);
+    }
+    .room-controls,
+    .mobile-controls {
+      min-width: 0;
+    }
+    .room-controls__arrows {
+      gap: 0.25rem;
+    }
+    .room-controls__arrows span {
+      min-width: 2rem;
+    }
+    .tt-tools {
+      grid-column: 1 / -1;
+      max-height: calc(100svh - 6rem);
     }
   }
 </style>

@@ -23,6 +23,10 @@ export function initMobileControls() {
     const open = toggle.getAttribute('aria-expanded') !== 'true';
     setExpanded(open);
   });
+  controls.querySelector('[data-filter-done]')?.addEventListener('click', () => {
+    setExpanded(false);
+    toggle.focus({ preventScroll: true });
+  });
   controls.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !controls.hasAttribute('data-filters-open')) return;
     setExpanded(false);
@@ -43,7 +47,7 @@ export function initMobileControls() {
   let pending = false;
   const updatePhase = () => {
     pending = false;
-    if (!mobile.matches) return;
+    if (!mobile.matches || controls.hasAttribute('data-filters-open')) return;
     const edge = controls.getBoundingClientRect().height + 24;
     const visible = phases.filter((phase) => !phase.hasAttribute('data-empty'));
     const active = visible.findLast((phase) => phase.getBoundingClientRect().top <= edge);

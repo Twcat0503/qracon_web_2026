@@ -33,9 +33,10 @@ export function initCrosshair() {
     pointerSuspended = true;
   });
   table.addEventListener('pointerover', (e) => {
-    if (!pointerSuspended) set(cellOf(e.target));
+    if (e.pointerType !== 'touch' && !pointerSuspended) set(cellOf(e.target));
   });
   table.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
     pointerSuspended = false;
     set(cellOf(e.target));
   });

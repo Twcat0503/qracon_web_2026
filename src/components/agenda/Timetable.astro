@@ -571,6 +571,10 @@ import Words from '../Words.astro';
     .s--long {
       grid-template-rows: auto minmax(0, 1fr) auto;
     }
+    .s--long:not(.s--all):not(.s--break) .s__title {
+      align-self: start;
+      padding-block: 1rem;
+    }
   }
   @media (max-width: 47.99rem) {
     .tt {
