@@ -28,6 +28,7 @@ import SessionContent from './SessionContent.astro';
     position: fixed;
     inset: 0;
     width: min(42rem, calc(100% - 2rem));
+    max-width: calc(100% - 2rem);
     max-height: calc(100svh - 2rem);
     margin: auto;
     padding: 0;
@@ -79,6 +80,12 @@ import SessionContent from './SessionContent.astro';
   @media (max-width: 47.99rem) {
     .session-dialog__bar {
       padding-inline: 1rem;
+      gap: 0.5rem;
+    }
+  }
+  @media (max-height: 30rem) {
+    .session-dialog {
+      max-height: calc(100svh - 1rem);
     }
   }
 </style>
