@@ -14,6 +14,7 @@ import {
   buildSessionStructuredData,
   isIndexableSession,
 } from '../../utils/seo';
+import { sitePath } from '../../utils/paths';
 import type { Session } from '../../types/agenda';
 
 export const getStaticPaths = (() =>
@@ -69,7 +70,7 @@ const structuredData = [
     <div class="detail__breadcrumbs">
       <Breadcrumbs items={breadcrumbs} />
     </div>
-    <a class="back" href="/agenda/">
+    <a class="back" href={sitePath('/agenda/')}>
       <Icon name="arrow-left" size={18} />
       <span>回時刻表</span>
     </a>
@@ -84,7 +85,7 @@ const structuredData = [
         <ol role="list">
           {prev && (
             <li class="stops__stop">
-              <a href={`/agenda/${prev.id}/`}>
+              <a href={sitePath(`/agenda/${prev.id}/`)}>
                 <span class="stops__dot" aria-hidden="true" />
                 <span class="stops__label">上一場</span>
                 <span class="stops__time">{hhmm(prev.start)}</span>
@@ -104,7 +105,7 @@ const structuredData = [
           </li>
           {next && (
             <li class="stops__stop">
-              <a href={`/agenda/${next.id}/`}>
+              <a href={sitePath(`/agenda/${next.id}/`)}>
                 <span class="stops__dot" aria-hidden="true" />
                 <span class="stops__label">下一場</span>
                 <span class="stops__time">{hhmm(next.start)}</span>

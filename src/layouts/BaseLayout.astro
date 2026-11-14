@@ -8,6 +8,7 @@ import {
   buildSiteStructuredData,
   type StructuredData,
 } from '../utils/seo';
+import { sitePath } from '../utils/paths';
 
 interface Props {
   title?: string;
@@ -36,13 +37,13 @@ const fullTitle = title
   : `${site.name} ${site.nameZh}｜${site.dateLabel} ${site.venue.org}${site.venue.name}`;
 
 const siteUrl = Astro.site ?? new URL(Astro.url.origin);
-const canonicalUrl = new URL(canonicalPath, siteUrl);
+const canonicalUrl = new URL(sitePath(canonicalPath), siteUrl);
 canonicalUrl.search = '';
 canonicalUrl.hash = '';
 if (!canonicalUrl.pathname.endsWith('/')) canonicalUrl.pathname += '/';
 
 const canonical = includeCanonical ? canonicalUrl.href : undefined;
-const ogImage = new URL(image, siteUrl).href;
+const ogImage = new URL(sitePath(image), siteUrl).href;
 const robots = noindex
   ? 'noindex, follow'
   : 'index, follow, max-image-preview:large';
@@ -65,10 +66,10 @@ const structuredJson = JSON.stringify(structuredGraph).replaceAll('<', '\\u003c'
     <meta name="description" content={description} />
     <meta name="robots" content={robots} />
     {canonical && <link rel="canonical" href={canonical} />}
-    <link rel="sitemap" href="/sitemap.xml" type="application/xml" />
-    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
-    <link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="sitemap" href={sitePath('/sitemap.xml')} type="application/xml" />
+    <link rel="icon" href={sitePath('/favicon.ico')} sizes="16x16 32x32 48x48" />
+    <link rel="icon" href={sitePath('/favicon-96x96.png')} type="image/png" sizes="96x96" />
+    <link rel="apple-touch-icon" href={sitePath('/apple-touch-icon.png')} />
     <meta name="theme-color" content="#d9d9d9" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />

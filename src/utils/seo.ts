@@ -3,6 +3,7 @@ import { isListed, sessions } from '../data/sessions';
 import { site } from '../data/site';
 import { ticketGroups } from '../data/tickets';
 import type { Session } from '../types/agenda';
+import { sitePath } from './paths';
 
 export interface BreadcrumbItem {
   label: string;
@@ -11,7 +12,7 @@ export interface BreadcrumbItem {
 
 export type StructuredData = Record<string, unknown>;
 
-const absoluteUrl = (path: string, siteUrl: URL) => new URL(path, siteUrl).href;
+const absoluteUrl = (path: string, siteUrl: URL) => new URL(sitePath(path), siteUrl).href;
 
 export const organizationId = (siteUrl: URL) => absoluteUrl('/#organization', siteUrl);
 export const websiteId = (siteUrl: URL) => absoluteUrl('/#website', siteUrl);

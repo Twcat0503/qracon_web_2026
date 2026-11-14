@@ -14,7 +14,11 @@ export const nav: NavItem[] = [
 ];
 
 export function isCurrent(itemHref: string, pathname: string): boolean {
-  const path = pathname.endsWith('/') ? pathname : `${pathname}/`;
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const appPath = basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`))
+    ? pathname.slice(basePath.length) || '/'
+    : pathname;
+  const path = appPath.endsWith('/') ? appPath : `${appPath}/`;
   if (itemHref === '/') return path === '/';
   return path.startsWith(itemHref);
 }

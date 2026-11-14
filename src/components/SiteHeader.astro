@@ -1,13 +1,14 @@
 ---
 import { nav, isCurrent } from '../data/nav';
 import Icon from './Icon.astro';
+import { sitePath } from '../utils/paths';
 
 const path = Astro.url.pathname;
 ---
 
 <header class="site-header" data-site-header>
   <div class="site-header__bar wrap">
-    <a class="brand" href="/">
+    <a class="brand" href={sitePath('/')}>
       <span class="brand__name">QRACON</span>
       <span class="brand__year">2026</span>
       <span class="visually-hidden">學生量子電腦年會首頁</span>
@@ -35,7 +36,7 @@ const path = Astro.url.pathname;
           const current = isCurrent(item.href, path);
           return (
             <li class:list={['route__stop', { 'is-current': current }]} style={`--i: ${i}`}>
-              <a href={item.href} aria-current={current ? 'page' : undefined}>
+              <a href={sitePath(item.href)} aria-current={current ? 'page' : undefined}>
                 <span class="route__dot" aria-hidden="true" />
                 <span class="route__label">{item.label}</span>
               </a>

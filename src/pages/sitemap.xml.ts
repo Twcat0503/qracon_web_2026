@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getIndexablePaths } from '../utils/seo';
+import { sitePath } from '../utils/paths';
 
 const escapeXml = (value: string) =>
   value
@@ -15,7 +16,7 @@ export const GET: APIRoute = ({ site }) => {
   }
 
   const urls = getIndexablePaths()
-    .map((path) => `  <url><loc>${escapeXml(new URL(path, site).href)}</loc></url>`)
+    .map((path) => `  <url><loc>${escapeXml(new URL(sitePath(path), site).href)}</loc></url>`)
     .join('\n');
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>

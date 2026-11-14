@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { sitePath } from '../utils/paths';
 
 export const GET: APIRoute = ({ site }) => {
   if (!site) {
@@ -6,9 +7,9 @@ export const GET: APIRoute = ({ site }) => {
   }
 
   const body = `User-agent: *
-Allow: /
+Allow: ${new URL(sitePath('/'), site).pathname}
 
-Sitemap: ${new URL('/sitemap.xml', site).href}
+Sitemap: ${new URL(sitePath('/sitemap.xml'), site).href}
 `;
 
   return new Response(body, {

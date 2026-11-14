@@ -4,6 +4,7 @@ import cat from '../assets/brand/schrodinger-cat-leaping.png';
 import { nav } from '../data/nav';
 import { site } from '../data/site';
 import Stamp from './Stamp.astro';
+import { sitePath } from '../utils/paths';
 
 const links = nav.filter((item) => item.href !== '/');
 ---
@@ -34,7 +35,7 @@ const links = nav.filter((item) => item.href !== '/');
         {
           links.map((item) => (
             <li>
-              <a href={item.href}>{item.label}</a>
+              <a href={sitePath(item.href)}>{item.label}</a>
             </li>
           ))
         }

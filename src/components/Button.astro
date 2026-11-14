@@ -1,6 +1,7 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 import Icon from './Icon.astro';
+import { sitePath } from '../utils/paths';
 
 type Variant = 'ink' | 'line';
 type IconName = 'arrow-right' | 'arrow-left' | 'arrow-up-right';
@@ -15,7 +16,7 @@ type Props = {
 
 const { href, variant = 'ink', icon, iconAt = 'end', class: className, ...rest } = Astro.props;
 const Tag = href ? 'a' : 'button';
-const attrs = href ? { href } : { type: 'button' as const };
+const attrs = href ? { href: sitePath(href) } : { type: 'button' as const };
 ---
 
 <Tag class:list={['btn', `btn--${variant}`, className]} {...attrs} {...rest}>

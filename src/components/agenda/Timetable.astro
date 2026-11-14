@@ -14,6 +14,7 @@ import {
   eventDateTime,
 } from '../../utils/timetable';
 import PunchToggle from './PunchToggle.astro';
+import { sitePath } from '../../utils/paths';
 import Words from '../Words.astro';
 ---
 
@@ -125,7 +126,7 @@ import Words from '../Words.astro';
             )}
             <h3 class="s__title" id={`s-${session.id}`}>
               {listed ? (
-                <a href={`/agenda/${session.id}/`}>
+                <a href={sitePath(`/agenda/${session.id}/`)}>
                   <Words text={session.title} />
                   <span class="s__info" aria-hidden="true">
                     i
